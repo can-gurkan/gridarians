@@ -19,6 +19,7 @@ cells-own [
 to setup
   clear-all
   init-custom-robot
+  init-bodies 3
   visualize-cells
   reset-ticks
 end
@@ -26,16 +27,20 @@ end
 to setup-box-walls
   let box-edge max-pxcor - 1
   ask patches with [(abs pxcor = box-edge or abs pycor = box-edge) and
-                    abs pxcor <= box-edge and abs pycor <= box-edge]
-    [ set pcolor gray ]
+    abs pxcor <= box-edge and abs pycor <= box-edge]
+  [ set pcolor gray ]
 end
+
+;; 1: seed-cell
+;; 2: mover
+;; 3: sensor
 
 to init-custom-robot
   create-gridarians 1 [
     set seed-loc [0 0]
     let seed-patch patch-at 0 0
     ;set my-cells [[0 0 1] [-1 -1 2] [1 1 3]]
-    let cell-list [[0 0 1] [-1 -1 2] [1 1 3] [1 2 3]]
+    let cell-list [[0 0 1] [-1 -1 2] [1 1 4] [1 2 4]]
     setxy ([pxcor] of seed-patch) ([pycor] of seed-patch)
     set heading 0
     set color white
@@ -48,18 +53,61 @@ to init-custom-robot
       setxy ([pxcor] of my-patch) ([pycor] of my-patch)
       set cell-type item 2 item index cell-list
       set direction 0
-      create-link-from myself [tie]
+      create-link-from myself [tie hide-link]
       set index index + 1
     ]
     ;embody
   ]
 end
 
-to embody
-  let seed-patch patch-at item 0 seed-loc item 1 seed-loc
-  ask seed-patch [
-    set cell-type 1
+to init-bodies [num]
+  create-gridarians num [
+    let seed-patch one-of patches with [count cells-here = 0]
+    move-to seed-patch
+    set heading 0
+    set color white
+    hatch-cells 1 [
+      set id [who] of myself
+      set cell-type 1
+      set direction 0
+      create-link-from myself [tie hide-link]
+    ]
+    repeat random 5 [
+      mutate-body
+    ]
   ]
+end
+
+to mutate-body
+  let possible-locs patch-set [neighbors with [count cells-here = 0]] of link-neighbors
+  print possible-locs
+  set possible-locs possible-locs with [available?]
+  if any? possible-locs [
+    print possible-locs
+    let loc one-of possible-locs
+    print loc
+    hatch-cells 1 [
+      move-to loc
+      set id [who] of myself
+      create-link-from myself [tie hide-link]
+      set cell-type one-of [2 3 4]
+      if cell-type = 2 [
+        set direction one-of [0 90 180 270]
+      ]
+      if cell-type = 3 [
+        set direction one-of [90 270]
+      ]
+      set heading direction
+    ]
+  ]
+end
+
+to-report available?
+  report (ifelse-value
+    self = nobody [false]
+    count cells-here >= 1 [false]
+    [true]
+  )
 end
 
 to visualize-cells
@@ -69,61 +117,93 @@ to visualize-cells
       let c one-of cells-here
       (ifelse [cell-type] of c = 1 [set pcolor orange]
         [cell-type] of c = 2 [set pcolor green]
-        [cell-type] of c = 3 [set pcolor blue]
-        [set pcolor black]
-      )
+        [cell-type] of c = 3 [set pcolor green - 2]
+        [cell-type] of c = 4 [set pcolor blue]
+        [set pcolor black])
     ]
   ]
 end
 
 to go
-
+  ask gridarians [
+    ;move-random
+    move-morph
+  ]
+  visualize-cells
   tick
 end
 
-to change-pos []
-
+to move-random
+  let dir one-of [0 45 90 135 180 225 270 315]
+  let cw? one-of [true false]
+  let rot? ifelse-value random-float 1 < 0.2 [true][false]
+  change-pos dir
+  if rot? [rotate cw?]
 end
 
-to rotate []
-
+to move-morph
+  let dir get-pos-vec
+  change-pos dir
+  let cw? get-rot-vec
+  rotate cw?
 end
 
-to-report check-pos-change2? [dir]
-  let flag true
-  ask link-neighbors [
-    let check-patch patch-at-heading-and-distance dir 1
-    (ifelse
-      check-patch = nobody [set flag false]
-      [count cells-here] of check-patch > 1 [set flag false]
-      )
-  ]
-  report flag
-end
-
-to-report check-rotate2? [x0 y0 cw?]
-  let flag true
-  ask link-neighbors [
-    let check-patch ifelse-value cw? [
-      patch (x0 - y0 + ycor) (y0 + x0 - xcor)
-    ] [
-      patch (x0 + y0 - ycor) (y0 - x0 + xcor)
+to-report get-pos-vec
+  let bool-list [0 0 0 0]
+  let dir-list  [0 90 180 270]
+  foreach range 4 [i ->
+    if any? link-neighbors with [cell-type = 2 and heading = item i dir-list][
+      if random-float 1 < 0.5 [
+        set bool-list replace-item i bool-list 1
+      ]
+      ;set bool-list replace-item i bool-list 1
     ]
-    (ifelse
-      check-patch = nobody [set flag false]
-      [count cells-here] of check-patch > 1 [set flag false]
-      )
   ]
-  report flag
+  let xv (ifelse-value
+    item 1 bool-list = 1 and item 3 bool-list = 0 [1]
+    item 1 bool-list = 0 and item 3 bool-list = 1 [-1]
+    [0])
+  let yv (ifelse-value
+    item 0 bool-list = 1 and item 2 bool-list = 0 [1]
+    item 0 bool-list = 0 and item 2 bool-list = 1 [-1]
+    [0])
+  ;print bool-list
+  report ifelse-value not (xv = 0 and yv = 0) [atan xv yv] ["stop"]
+end
+
+to-report get-rot-vec
+  let r? false
+  let l? false
+  if any? link-neighbors with [cell-type = 3 and direction = 90]  [if random-float 1 < 0.3 [set r? true]]
+  if any? link-neighbors with [cell-type = 3 and direction = 270] [if random-float 1 < 0.3 [set l? true]]
+  ifelse r? xor l? [
+    report ifelse-value r? [true] [false]
+  ] [
+    report "stop"
+  ]
+end
+
+to change-pos [dir]
+  if dir != "stop"[
+    if check-pos-change? dir [
+      move-to patch-at-heading-and-distance dir 1
+    ]
+  ]
+end
+
+to rotate [cw?]
+  if cw? != "stop" [
+    if check-rotate? xcor ycor cw? [
+      ifelse cw? [ rt 90 ] [ lt 90 ]
+    ]
+  ]
 end
 
 to-report check-pos-change? [dir]
   let flag true
   ask link-neighbors [
     let patch-to-check patch-at-heading-and-distance dir 1
-    if not check-patch? patch-to-check [
-      set flag false
-    ]
+    if not check-patch? patch-to-check [ set flag false ]
   ]
   report flag
 end
@@ -136,30 +216,18 @@ to-report check-rotate? [x0 y0 cw?]
     ] [
       patch (x0 + y0 - ycor) (y0 - x0 + xcor)
     ]
-    if not check-patch? patch-to-check [
-      set flag false
-    ]
+    if not check-patch? patch-to-check [ set flag false ]
   ]
   report flag
 end
 
 to-report check-patch? [next-patch]
+  let my-id id
   report (ifelse-value
     next-patch = nobody [false]
-    [count cells-here] of next-patch > 1 [false]
+    [count cells-here with [id != my-id ]] of next-patch >= 1 [false]
     [true]
   )
-end
-
-to-report check-collision [move-dir rotate-dir]
-  let flag false
-  ask link-neighbors [
-    print who
-    if patch-at-heading-and-distance move-dir 1 = nobody [
-      set flag true
-    ]
-  ]
-  report flag
 end
 
 to-report check-overlap
@@ -172,7 +240,7 @@ to-report check-overlap
       report false
     ] [
       report false
-    ])
+  ])
 end
 
 to test
@@ -207,22 +275,13 @@ to test-rotate
   visualize-cells
 end
 
-to test-fd-move
-  ask gridarians [
-    print check-collision 0 0
-    if not check-collision 0 0 [
-      fd 1
-    ]
-  ]
-  visualize-cells
-end
 
 
 to draw-cells
-    ask patch mouse-xcor mouse-ycor [
-        set pcolor green
-    ]
-    display
+  ask patch mouse-xcor mouse-ycor [
+    set pcolor green
+  ]
+  display
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
