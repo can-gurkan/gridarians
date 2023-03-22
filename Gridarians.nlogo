@@ -1,3 +1,5 @@
+extensions[fp]
+
 globals [
 
 ]
@@ -18,7 +20,7 @@ cells-own [
 
 to setup
   clear-all
-  init-custom-robot
+  ;init-custom-robot
   init-bodies 3
   visualize-cells
   reset-ticks
@@ -66,40 +68,88 @@ to init-bodies [num]
     move-to seed-patch
     set heading 0
     set color white
+    set shape "dot"
+    ;set hidden? true
     hatch-cells 1 [
       set id [who] of myself
       set cell-type 1
       set direction 0
+      set shape "dot"
       create-link-from myself [tie hide-link]
     ]
-    repeat random 5 [
-      mutate-body
+    repeat random 10 [
+      mutate-body 1 0
     ]
   ]
 end
 
-to mutate-body
-  let possible-locs patch-set [neighbors with [count cells-here = 0]] of link-neighbors
-  print possible-locs
-  set possible-locs possible-locs with [available?]
-  if any? possible-locs [
+to mutate-body [birth-prob death-prob]
+  if random-float 1 < birth-prob [
+    let possible-locs patch-set [neighbors with [count cells-here = 0]] of link-neighbors
     print possible-locs
-    let loc one-of possible-locs
-    print loc
-    hatch-cells 1 [
-      move-to loc
-      set id [who] of myself
-      create-link-from myself [tie hide-link]
-      set cell-type one-of [2 3 4]
-      if cell-type = 2 [
-        set direction one-of [0 90 180 270]
+    set possible-locs possible-locs with [available?]
+    if any? possible-locs [
+      print possible-locs
+      let loc one-of possible-locs
+      print loc
+      hatch-cells 1 [
+        move-to loc
+        set id [who] of myself
+        create-link-from myself [tie hide-link]
+        set cell-type one-of [2 3 4]
+        if cell-type = 2 [
+          set direction one-of [0 90 180 270]
+          set shape "arrow2"
+        ]
+        if cell-type = 3 [
+          set direction one-of [90 270]
+          ifelse direction = 90 [set shape "clock-wise"][set shape "counter-clock-wise"]
+        ]
+        if cell-type = 4 [
+          set direction one-of [0 90 180 270]
+          set shape "T"
+        ]
+        set heading direction
       ]
-      if cell-type = 3 [
-        set direction one-of [90 270]
-      ]
-      set heading direction
     ]
   ]
+  if random-float 1 < death-prob [
+    if any? link-neighbors with [cell-type != 1] [
+      ask one-of link-neighbors with [cell-type != 1] [
+        if is-removable? [die]
+      ]
+    ]
+  ]
+end
+
+to-report is-removable?
+  ;; checks whether removing a cell disconnects the body
+  ;; uses a complicated logic and does not work with diags
+  ;; temporary, replace in the future
+  let bool-list map [-> false] range 8
+  print bool-list
+  foreach range 8 [i ->
+    let ipatch patch-at-heading-and-distance (i * 45) 1
+    if ipatch != nobody and any? [cells-here] of ipatch [
+      if [id] of one-of cells-here = id [
+        set bool-list replace-item i bool-list true
+      ]
+    ]
+  ]
+  let num-true length filter [b -> b = true] bool-list
+  let longest-chain 0
+  let cur-chain 0
+  set bool-list fp:flatten list bool-list bool-list
+  foreach bool-list [b ->
+    ifelse b [
+      set cur-chain cur-chain + 1
+    ] [
+      set longest-chain max list longest-chain cur-chain
+      set cur-chain 0
+    ]
+  ]
+  set longest-chain max list longest-chain cur-chain
+  report ifelse-value longest-chain >= num-true [true][false]
 end
 
 to-report available?
@@ -126,6 +176,9 @@ end
 
 to go
   ask gridarians [
+    if random-float 1 < 0.2 [
+      mutate-body 0.4 0.6
+    ]
     ;move-random
     move-morph
   ]
@@ -391,10 +444,10 @@ true
 0
 Polygon -7500403 true true 150 0 135 15 120 60 120 105 15 165 15 195 120 180 135 240 105 270 120 285 150 270 180 285 210 270 165 240 180 180 285 195 285 165 180 105 180 60 165 15
 
-arrow
+arrow2
 true
 0
-Polygon -7500403 true true 150 0 0 150 105 150 105 293 195 293 195 150 300 150
+Polygon -7500403 true true 150 15 75 105 135 105 135 270 165 270 165 105 225 105
 
 box
 false
@@ -448,6 +501,18 @@ false
 Circle -7500403 true true 0 0 300
 Circle -16777216 true false 30 30 240
 
+clock-wise
+true
+0
+Circle -7500403 false true 60 60 180
+Polygon -7500403 true true 223 205 283 115 163 115 223 205
+
+counter-clock-wise
+true
+0
+Circle -7500403 false true 60 60 180
+Polygon -7500403 true true 223 93 283 183 163 183 223 93
+
 cow
 false
 0
@@ -460,10 +525,30 @@ false
 0
 Circle -7500403 true true 0 0 300
 
+die 1
+false
+0
+Rectangle -7500403 true true 45 45 255 255
+Circle -16777216 true false 129 129 42
+
 dot
 false
 0
 Circle -7500403 true true 90 90 120
+
+eyeball
+false
+0
+Circle -1 true false 22 20 248
+Circle -7500403 true true 83 81 122
+Circle -16777216 true false 122 120 44
+
+eyeball2
+false
+0
+Circle -1 true false 32 29 236
+Circle -13791810 true false 88 85 122
+Circle -16777216 true false 127 124 44
 
 face happy
 false
@@ -523,6 +608,11 @@ Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
 
+hex
+false
+0
+Polygon -7500403 true true 0 150 75 30 225 30 300 150 225 270 75 270
+
 house
 false
 0
@@ -546,6 +636,12 @@ line half
 true
 0
 Line -7500403 true 150 0 150 150
+
+orbit 1
+true
+0
+Circle -7500403 true true 116 11 67
+Circle -7500403 false true 41 41 218
 
 pentagon
 false
@@ -573,6 +669,41 @@ Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
+reverse-triangle
+false
+0
+Polygon -7500403 true true 150 270 15 45 285 45
+
+sensor
+true
+0
+Circle -7500403 true true 0 -165 300
+Rectangle -7500403 true true 135 105 165 300
+
+sensor2
+true
+0
+Circle -7500403 true true 0 -180 300
+Rectangle -7500403 true true 135 105 165 300
+Circle -16777216 true false 30 -150 240
+
+small-arrow
+true
+0
+Polygon -7500403 true true 150 75 105 150 195 150
+Polygon -7500403 true true 135 149 135 225 139 234 147 239 154 239 161 234 165 226 165 149
+
+small-reverse-triangle
+true
+0
+Polygon -7500403 true true 150 255 45 90 255 90
+
+spinner
+true
+0
+Polygon -7500403 true true 150 0 105 75 195 75
+Polygon -7500403 true true 135 74 135 150 139 159 147 164 154 164 161 159 165 151 165 74
+
 square
 false
 0
@@ -588,6 +719,12 @@ star
 false
 0
 Polygon -7500403 true true 151 1 185 108 298 108 207 175 242 282 151 216 59 282 94 175 3 108 116 108
+
+t
+true
+0
+Polygon -7500403 true true 150 105 75 105 135 105 135 270 165 270 165 105 225 105
+Rectangle -7500403 true true 60 90 240 105
 
 target
 false
