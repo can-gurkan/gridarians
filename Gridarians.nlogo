@@ -1,7 +1,7 @@
-extensions[fp]
+extensions[fp palette]
 
 globals [
-
+  time vis tin low
 ]
 
 breed[gridarians gridarian]
@@ -16,12 +16,13 @@ cells-own [
   cell-type
   direction
   id
+  is-cutpoint?
 ]
 
 to setup
   clear-all
   ;init-custom-robot
-  init-bodies 3
+  init-bodies init-num-agents
   visualize-cells
   reset-ticks
 end
@@ -35,7 +36,8 @@ end
 
 ;; 1: seed-cell
 ;; 2: mover
-;; 3: sensor
+;; 3: rotator
+;; 4: sensor
 
 to init-custom-robot
   create-gridarians 1 [
@@ -69,7 +71,6 @@ to init-bodies [num]
     set heading 0
     set color white
     set shape "dot"
-    ;set hidden? true
     hatch-cells 1 [
       set id [who] of myself
       set cell-type 1
@@ -84,8 +85,8 @@ to init-bodies [num]
 end
 
 to mutate-body [birth-prob death-prob]
-  if random-float 1 < birth-prob [
-    let possible-locs patch-set [neighbors with [count cells-here = 0]] of link-neighbors
+  if random-float 1 < birth-prob and count link-neighbors <= max-cells-per-body [
+    let possible-locs patch-set [neighbors4 with [count cells-here = 0]] of link-neighbors
     print possible-locs
     set possible-locs possible-locs with [available?]
     if any? possible-locs [
@@ -115,42 +116,45 @@ to mutate-body [birth-prob death-prob]
   ]
   if random-float 1 < death-prob [
     if any? link-neighbors with [cell-type != 1] [
+      let iid [id] of one-of link-neighbors with [cell-type != 1]
+      find-cutpoints iid
       ask one-of link-neighbors with [cell-type != 1] [
-        if is-removable? [die]
+        if not is-cutpoint? [die]
       ]
     ]
   ]
 end
 
-to-report is-removable?
-  ;; checks whether removing a cell disconnects the body
-  ;; uses a complicated logic and does not work with diags
-  ;; temporary, replace in the future
-  let bool-list map [-> false] range 8
-  print bool-list
-  foreach range 8 [i ->
-    let ipatch patch-at-heading-and-distance (i * 45) 1
-    if ipatch != nobody and any? [cells-here] of ipatch [
-      if [id] of one-of cells-here = id [
-        set bool-list replace-item i bool-list true
-      ]
-    ]
-  ]
-  let num-true length filter [b -> b = true] bool-list
-  let longest-chain 0
-  let cur-chain 0
-  set bool-list fp:flatten list bool-list bool-list
-  foreach bool-list [b ->
-    ifelse b [
-      set cur-chain cur-chain + 1
-    ] [
-      set longest-chain max list longest-chain cur-chain
-      set cur-chain 0
-    ]
-  ]
-  set longest-chain max list longest-chain cur-chain
-  report ifelse-value longest-chain >= num-true [true][false]
-end
+
+;to-report is-removable?
+;  ;; checks whether removing a cell disconnects the body
+;  ;; uses a complicated logic and does not work with diags
+;  ;; temporary, replace in the future
+;  let bool-list map [-> false] range 8
+;  print bool-list
+;  foreach range 8 [i ->
+;    let ipatch patch-at-heading-and-distance (i * 45) 1
+;    if ipatch != nobody and any? [cells-here] of ipatch [
+;      if [id] of one-of cells-here = id [
+;        set bool-list replace-item i bool-list true
+;      ]
+;    ]
+;  ]
+;  let num-true length filter [b -> b = true] bool-list
+;  let longest-chain 0
+;  let cur-chain 0
+;  set bool-list fp:flatten list bool-list bool-list
+;  foreach bool-list [b ->
+;    ifelse b [
+;      set cur-chain cur-chain + 1
+;    ] [
+;      set longest-chain max list longest-chain cur-chain
+;      set cur-chain 0
+;    ]
+;  ]
+;  set longest-chain max list longest-chain cur-chain
+;  report ifelse-value longest-chain >= num-true [true][false]
+;end
 
 to-report available?
   report (ifelse-value
@@ -161,16 +165,29 @@ to-report available?
 end
 
 to visualize-cells
+  ;let color-list [blue green red yellow cyan magenta brown orange lime sky pink]
+  let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
   ask patches [
     set pcolor black
     if check-overlap [
       let c one-of cells-here
-      (ifelse [cell-type] of c = 1 [set pcolor orange]
-        [cell-type] of c = 2 [set pcolor green]
-        [cell-type] of c = 3 [set pcolor green - 2]
-        [cell-type] of c = 4 [set pcolor blue]
-        [set pcolor black])
+      (ifelse cell-visualization = "by-cell-type" [
+        (ifelse [cell-type] of c = 1 [set pcolor orange]
+          [cell-type] of c = 2 [set pcolor green]
+          [cell-type] of c = 3 [set pcolor green - 2]
+          [cell-type] of c = 4 [set pcolor blue]
+          [set pcolor black])
+        ]
+        cell-visualization = "by-agent" [
+          let cid [id] of c mod 9 ;change later
+          set pcolor item cid color-list
+      ])
     ]
+  ]
+  ifelse visualize-cell-type-symbol? [
+    ask turtles [set hidden? false]
+  ] [
+    ask turtles [set hidden? true]
   ]
 end
 
@@ -180,6 +197,7 @@ to go
       mutate-body 0.4 0.6
     ]
     ;move-random
+    ;move-morph-limited
     move-morph
   ]
   visualize-cells
@@ -194,14 +212,14 @@ to move-random
   if rot? [rotate cw?]
 end
 
-to move-morph
-  let dir get-pos-vec
+to move-morph-limited
+  let dir get-pos-dir
   change-pos dir
-  let cw? get-rot-vec
+  let cw? get-rot-dir
   rotate cw?
 end
 
-to-report get-pos-vec
+to-report get-pos-dir
   let bool-list [0 0 0 0]
   let dir-list  [0 90 180 270]
   foreach range 4 [i ->
@@ -224,7 +242,7 @@ to-report get-pos-vec
   report ifelse-value not (xv = 0 and yv = 0) [atan xv yv] ["stop"]
 end
 
-to-report get-rot-vec
+to-report get-rot-dir
   let r? false
   let l? false
   if any? link-neighbors with [cell-type = 3 and direction = 90]  [if random-float 1 < 0.3 [set r? true]]
@@ -234,6 +252,48 @@ to-report get-rot-vec
   ] [
     report "stop"
   ]
+end
+
+to move-morph
+  let dirs get-pos-vecs
+  ;print dirs
+  foreach dirs [d -> change-pos d]
+  let rots get-rot-vecs
+  ;print rots
+  foreach rots [cw? -> rotate cw?]
+end
+
+to-report get-pos-vecs
+  let vecs []
+  let dir-list  [0 90 180 270]
+  foreach dir-list [d ->
+    if any? link-neighbors with [cell-type = 2 and heading = d][
+      let n count link-neighbors with [cell-type = 2 and heading = d]
+      repeat n [
+        if random-float 1 < 0.5 [
+          set vecs lput d vecs
+        ]
+      ]
+    ]
+  ]
+  report ifelse-value empty? vecs [["stop"]][vecs]
+end
+
+to-report get-rot-vecs
+  let vecs []
+  let dir-list [90 270]
+  let cw?-list [true false]
+  foreach range 2 [i ->
+    if any? link-neighbors with [cell-type = 3 and direction = item i dir-list][
+      let n count link-neighbors with [cell-type = 3 and direction = item i dir-list]
+      repeat n [
+        if random-float 1 < 0.3 [
+          set vecs lput (item i cw?-list) vecs
+        ]
+      ]
+    ]
+  ]
+  report ifelse-value empty? vecs [["stop"]][vecs]
 end
 
 to change-pos [dir]
@@ -296,6 +356,74 @@ to-report check-overlap
   ])
 end
 
+to find-cutpoints [iid]
+  ;; Tarjan's algorithm for find articulation points
+  ask cells with [id = iid] [set is-cutpoint? false]
+  let n count cells with [id = iid]
+  set time 0
+  set vis map [-> false] range n
+  set tin map [-> -1] range n
+  set low map [-> -1] range n
+  foreach range n [i ->
+    if not (item i vis) [
+      dfs iid i -1
+    ]
+  ]
+end
+
+to dfs [iid v p]
+  ;; Depth-First-Search Tree algorithm
+  set vis replace-item v vis true
+  set time time + 1
+  set tin replace-item v tin time
+  set low replace-item v low time
+  let children 0
+  foreach adj iid v [ti ->
+    if ti != p [
+      ifelse item ti vis [
+        set low replace-item v low (min list (item v low) (item ti tin))
+      ] [
+        dfs iid ti v
+        set low replace-item v low (min list (item v low) (item ti low))
+        if item ti low >= item v tin and p != -1 [
+          ask get-vertex iid v [
+            set is-cutpoint? true
+          ]
+        ]
+        set children children + 1
+      ]
+    ]
+  ]
+  if p = -1 and children > 1 [
+    ask get-vertex iid v [
+      set is-cutpoint? true
+    ]
+  ]
+end
+
+to-report adj [iid i]
+  ;; Returns adjacency list
+  let tlist sort cells with [id = iid]
+  let v item i tlist
+  let pn [neighbors4] of v
+  let alist []
+  let wlist []
+  ask pn [
+    if any? cells-here with [id = iid] [
+      set alist lput (one-of cells-here with [id = iid]) alist
+    ]
+  ]
+  foreach alist [a ->
+    set wlist lput (item 0 fp:find-indices [x -> x = a] tlist) wlist
+  ]
+  report wlist
+end
+
+to-report get-vertex [iid i]
+  ;; Returns cell from vertex number
+  report item i sort cells with [id = iid]
+end
+
 to test
   ;test-fd-move
   test-change-pos
@@ -331,20 +459,22 @@ end
 
 
 to draw-cells
-  ask patch mouse-xcor mouse-ycor [
-    set pcolor green
+  if mouse-down? [
+    ask patch mouse-xcor mouse-ycor [
+      set pcolor white
+    ]
+    display
   ]
-  display
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 285
 10
-749
-475
+773
+499
 -1
 -1
-14.71
+9.412
 1
 10
 1
@@ -354,10 +484,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--15
-15
--15
-15
+-25
+25
+-25
+25
 1
 1
 1
@@ -365,10 +495,10 @@ ticks
 15.0
 
 BUTTON
+135
+95
+235
 130
-30
-230
-65
 go
 go
 T
@@ -382,10 +512,10 @@ NIL
 0
 
 BUTTON
-10
-30
-110
-65
+15
+95
+115
+130
 NIL
 setup
 NIL
@@ -416,10 +546,10 @@ NIL
 1
 
 BUTTON
-130
-85
-230
-120
+135
+150
+235
+185
 NIL
 test
 T
@@ -431,6 +561,57 @@ NIL
 NIL
 NIL
 1
+
+SWITCH
+15
+200
+235
+233
+visualize-cell-type-symbol?
+visualize-cell-type-symbol?
+0
+1
+-1000
+
+CHOOSER
+15
+240
+153
+285
+cell-visualization
+cell-visualization
+"by-cell-type" "by-agent"
+0
+
+SLIDER
+15
+15
+175
+48
+init-num-agents
+init-num-agents
+0
+30
+3.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+55
+175
+88
+max-cells-per-body
+max-cells-per-body
+0
+100
+15.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 @#$#@#$#@
@@ -500,6 +681,36 @@ false
 0
 Circle -7500403 true true 0 0 300
 Circle -16777216 true false 30 30 240
+
+circuit
+false
+0
+Rectangle -7500403 true true 15 15 30 285
+Rectangle -7500403 true true 30 15 285 30
+Rectangle -7500403 true true 30 270 285 285
+Rectangle -7500403 true true 270 30 285 285
+Rectangle -7500403 true true 44 127 104 187
+Rectangle -7500403 true true 115 45 187 110
+Rectangle -7500403 true true 188 181 250 241
+Rectangle -7500403 true true 137 107 162 285
+Rectangle -7500403 true true 60 185 86 225
+Rectangle -7500403 true true 60 225 138 250
+Rectangle -7500403 true true 207 154 231 185
+Rectangle -7500403 true true 207 130 273 154
+
+circuit2
+false
+0
+Rectangle -7500403 true true 15 15 30 285
+Rectangle -7500403 true true 30 15 285 30
+Rectangle -7500403 true true 30 270 285 285
+Rectangle -7500403 true true 270 30 285 285
+Circle -7500403 true true 116 71 67
+Circle -7500403 true true 71 161 67
+Circle -7500403 true true 161 161 67
+Polygon -7500403 true true 45 270 90 210 75 210 30 270 30 270
+Polygon -7500403 true true 270 270 225 210 210 210 255 270 165 270
+Polygon -7500403 true true 141 30 141 75 156 75 156 30 141 30
 
 clock-wise
 true
