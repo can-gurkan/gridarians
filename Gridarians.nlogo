@@ -1,6 +1,7 @@
 extensions[fp palette]
 
 globals [
+  sensing-distance
   time vis tin low
 ]
 
@@ -19,8 +20,13 @@ cells-own [
   is-cutpoint?
 ]
 
+to init-params
+  set sensing-distance 3
+end
+
 to setup
   clear-all
+  init-params
   ;init-custom-robot
   init-bodies init-num-agents
   visualize-cells
@@ -38,6 +44,8 @@ end
 ;; 2: mover
 ;; 3: rotator
 ;; 4: sensor
+;; 5: compute
+;; 6: interact
 
 to init-custom-robot
   create-gridarians 1 [
@@ -87,12 +95,12 @@ end
 to mutate-body [birth-prob death-prob]
   if random-float 1 < birth-prob and count link-neighbors <= max-cells-per-body [
     let possible-locs patch-set [neighbors4 with [count cells-here = 0]] of link-neighbors
-    print possible-locs
+    ;print possible-locs
     set possible-locs possible-locs with [available?]
     if any? possible-locs [
-      print possible-locs
+      ;print possible-locs
       let loc one-of possible-locs
-      print loc
+      ;print loc
       hatch-cells 1 [
         move-to loc
         set id [who] of myself
@@ -196,12 +204,55 @@ to go
     if random-float 1 < 0.2 [
       mutate-body 0.4 0.6
     ]
+    sense
     ;move-random
-    ;move-morph-limited
-    move-morph
+    move-morph-limited
+    ;move-morph
   ]
   visualize-cells
   tick
+end
+
+to sense
+  let obs get-observation-vector
+end
+
+to-report get-observation-vector
+  let obs []
+  if any? link-neighbors with [cell-type = 4][
+    foreach sort link-neighbors with [cell-type = 4] [sensor ->
+      ask sensor [set obs lput get-sensor-input obs]
+    ]
+  ]
+  print obs
+  report obs
+end
+
+to-report get-sensor-input
+  let flag? true
+  let dist 0
+  let input []
+  while [flag?][
+    set dist dist + 1
+    set input list dist 0
+    ifelse patch-ahead dist != nobody [
+      ask patch-ahead dist [
+        if any? turtles-here [
+          let i 0
+          (ifelse any? cells-here [set i 2]
+            [set i 1])
+          set input list dist i
+          set flag? false
+        ]
+      ]
+    ] [
+      set input list dist 1
+      print dist
+      set flag? false
+    ]
+    if dist >= sensing-distance [set flag? false]
+  ]
+  report input
 end
 
 to move-random
