@@ -1,12 +1,17 @@
 extensions[fp palette]
 
 globals [
+  available-cell-types
+  num-balls
+  num-walls
   sensing-distance
   time vis tin low
 ]
 
 breed[gridarians gridarian]
 breed[cells cell]
+breed[walls wall]
+breed[balls ball]
 
 gridarians-own[
   seed-loc
@@ -21,6 +26,9 @@ cells-own [
 ]
 
 to init-params
+  set available-cell-types [2 3 4 5 6]
+  set num-balls 5
+  set num-walls 10
   set sensing-distance 3
 end
 
@@ -29,6 +37,8 @@ to setup
   init-params
   ;init-custom-robot
   init-bodies init-num-agents
+  setup-random-walls
+  setup-random-balls
   visualize-cells
   reset-ticks
 end
@@ -38,6 +48,24 @@ to setup-box-walls
   ask patches with [(abs pxcor = box-edge or abs pycor = box-edge) and
     abs pxcor <= box-edge and abs pycor <= box-edge]
   [ set pcolor gray ]
+end
+
+to setup-random-walls
+  ask n-of num-walls patches with [not any? turtles-here][
+    sprout-walls 1 [
+      set shape "square"
+      set color grey
+    ]
+  ]
+end
+
+to setup-random-balls
+  ask n-of num-balls patches with [not any? turtles-here][
+    sprout-balls 1 [
+      set shape "circle"
+      set color yellow
+    ]
+  ]
 end
 
 ;; 1: seed-cell
@@ -74,7 +102,7 @@ end
 
 to init-bodies [num]
   create-gridarians num [
-    let seed-patch one-of patches with [count cells-here = 0]
+    let seed-patch one-of patches with [count turtles-here = 0]
     move-to seed-patch
     set heading 0
     set color white
@@ -94,7 +122,7 @@ end
 
 to mutate-body [birth-prob death-prob]
   if random-float 1 < birth-prob and count link-neighbors <= max-cells-per-body [
-    let possible-locs patch-set [neighbors4 with [count cells-here = 0]] of link-neighbors
+    let possible-locs patch-set [neighbors4 with [count turtles-here = 0]] of link-neighbors
     ;print possible-locs
     set possible-locs possible-locs with [available?]
     if any? possible-locs [
@@ -105,7 +133,7 @@ to mutate-body [birth-prob death-prob]
         move-to loc
         set id [who] of myself
         create-link-from myself [tie hide-link]
-        set cell-type one-of [2 3 4]
+        set cell-type one-of available-cell-types
         if cell-type = 2 [
           set direction one-of [0 90 180 270]
           set shape "arrow2"
@@ -118,13 +146,21 @@ to mutate-body [birth-prob death-prob]
           set direction one-of [0 90 180 270]
           set shape "T"
         ]
+        if cell-type = 5 [
+          set direction 0
+          set shape "square3"
+        ]
+        if cell-type = 6 [
+          set direction one-of [0 90 180 270]
+          set shape "x"
+        ]
         set heading direction
       ]
     ]
   ]
   if random-float 1 < death-prob [
     if any? link-neighbors with [cell-type != 1] [
-      let iid [id] of one-of link-neighbors with [cell-type != 1]
+      let iid [id] of one-of link-neighbors
       find-cutpoints iid
       ask one-of link-neighbors with [cell-type != 1] [
         if not is-cutpoint? [die]
@@ -167,7 +203,7 @@ end
 to-report available?
   report (ifelse-value
     self = nobody [false]
-    count cells-here >= 1 [false]
+    count turtles-here > 0 [false]
     [true]
   )
 end
@@ -177,13 +213,15 @@ to visualize-cells
   let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
   ask patches [
     set pcolor black
-    if check-overlap [
+    if count cells-here = 1 and check-overlap [
       let c one-of cells-here
       (ifelse cell-visualization = "by-cell-type" [
         (ifelse [cell-type] of c = 1 [set pcolor orange]
           [cell-type] of c = 2 [set pcolor green]
-          [cell-type] of c = 3 [set pcolor green - 2]
+          [cell-type] of c = 3 [set pcolor green - 1]
           [cell-type] of c = 4 [set pcolor blue]
+          [cell-type] of c = 5 [set pcolor magenta]
+          [cell-type] of c = 6 [set pcolor red]
           [set pcolor black])
         ]
         cell-visualization = "by-agent" [
@@ -193,9 +231,10 @@ to visualize-cells
     ]
   ]
   ifelse visualize-cell-type-symbol? [
-    ask turtles [set hidden? false]
+    ask cells [set hidden? false]
   ] [
-    ask turtles [set hidden? true]
+    ask cells [set hidden? true]
+    ask gridarians [set hidden? true]
   ]
 end
 
@@ -205,10 +244,12 @@ to go
       mutate-body 0.4 0.6
     ]
     sense
+    interact
     ;move-random
     move-morph-limited
     ;move-morph
   ]
+  replenish-balls
   visualize-cells
   tick
 end
@@ -218,15 +259,21 @@ to sense
 end
 
 to-report get-observation-vector
-  let obs []
+  let inputs []
   if any? link-neighbors with [cell-type = 4][
     foreach sort link-neighbors with [cell-type = 4] [sensor ->
-      ask sensor [set obs lput get-sensor-input obs]
+      ask sensor [set inputs lput get-sensor-input inputs]
     ]
   ]
-  print obs
-  report obs
+  ;print inputs
+  report inputs
 end
+
+;; 0: empty
+;; 1: my cell
+;; 2: other cell
+;; 3: wall
+;; 4: ball
 
 to-report get-sensor-input
   let flag? true
@@ -238,21 +285,42 @@ to-report get-sensor-input
     ifelse patch-ahead dist != nobody [
       ask patch-ahead dist [
         if any? turtles-here [
-          let i 0
-          (ifelse any? cells-here [set i 2]
-            [set i 1])
+          let i 5
+          let my-id 0.1
+          if any? cells-here [
+            set my-id [id] of one-of cells-here
+          ]
+          (ifelse any? cells-here with [id = my-id] [set i 1]
+            any? cells-here with [id != my-id] [set i 2]
+            any? walls-here [set i 3]
+            any? balls-here [set i 4]
+            [set i 5])
           set input list dist i
           set flag? false
         ]
       ]
     ] [
-      set input list dist 1
-      print dist
+      set input list dist 3
+      ;print dist
       set flag? false
     ]
     if dist >= sensing-distance [set flag? false]
   ]
   report input
+end
+
+to interact
+  let score 0
+  if any? link-neighbors with [cell-type = 6] [
+    ask link-neighbors with [cell-type = 6] [
+      if any? neighbors4 with [any? balls-here] [
+        ask neighbors4 with [any? balls-here] [
+          ask balls-here [die]
+          set score score + 1
+        ]
+      ]
+    ]
+  ]
 end
 
 to move-random
@@ -389,22 +457,36 @@ to-report check-patch? [next-patch]
   let my-id id
   report (ifelse-value
     next-patch = nobody [false]
-    [count cells-here with [id != my-id ]] of next-patch >= 1 [false]
+    ([count cells-here with [id != my-id ]] of next-patch >= 1) or
+    ([any? walls-here] of next-patch) or
+    ([any? balls-here] of next-patch) [false]
     [true]
   )
 end
 
 to-report check-overlap
-  (ifelse
-    count cells-here = 1 [
-      report true
+  (ifelse count turtles-here with [breed != cells] > 1 [
+    print "overlap error"
+    report false
     ]
     count cells-here > 1 [
       print "overlap error"
       report false
     ] [
-      report false
-  ])
+      report true
+    ])
+end
+
+to replenish-balls
+  if count balls < num-balls [
+    let n num-balls - (count balls)
+    ask n-of n patches with [not any? turtles-here][
+      sprout-balls 1 [
+        set shape "circle"
+        set color yellow
+      ]
+    ]
+  ]
 end
 
 to find-cutpoints [iid]
@@ -521,11 +603,11 @@ end
 GRAPHICS-WINDOW
 285
 10
-773
-499
+878
+604
 -1
 -1
-9.412
+11.471
 1
 10
 1
@@ -620,7 +702,7 @@ SWITCH
 233
 visualize-cell-type-symbol?
 visualize-cell-type-symbol?
-0
+1
 1
 -1000
 
@@ -976,6 +1058,23 @@ false
 0
 Rectangle -7500403 true true 30 30 270 270
 Rectangle -16777216 true false 60 60 240 240
+
+square-dot
+false
+0
+Circle -7500403 true true 90 90 120
+Rectangle -7500403 true true 0 0 30 300
+Rectangle -7500403 true true 0 270 300 300
+Rectangle -7500403 true true 270 0 300 300
+Rectangle -7500403 true true 0 0 300 30
+
+square3
+false
+0
+Rectangle -7500403 true true 0 0 30 300
+Rectangle -7500403 true true 0 270 300 300
+Rectangle -7500403 true true 270 0 300 300
+Rectangle -7500403 true true 0 0 300 30
 
 star
 false
