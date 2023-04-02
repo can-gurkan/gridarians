@@ -14,6 +14,7 @@ globals [
   delta-pre-cell-health
 
   num-updates
+  num-cell-updates
   threshold-cell-death
   threshold-cell-birth
   delta
@@ -22,6 +23,7 @@ globals [
   threshold-cell-type-dec
   threshold-cell-dir-inc
   threshold-cell-dir-dec
+  init-child-health
 
   num-body-inputs
   num-body-outputs
@@ -48,7 +50,8 @@ cells-own [
 ]
 
 to init-params
-  set grid-size 25
+  __change-topology false false
+  set grid-size 30
   set available-cell-types [2 3 4 5 6]
   set num-balls 5
   set num-walls 10
@@ -62,6 +65,7 @@ to init-params
 
   ;; Lifetime params
   set num-updates 1
+  set num-cell-updates 5
   set threshold-cell-death -0.4
   set threshold-cell-birth 0.2
   set delta 0.1
@@ -70,6 +74,7 @@ to init-params
   set threshold-cell-type-dec -0.5
   set threshold-cell-dir-inc 0.5
   set threshold-cell-dir-dec -0.5
+  set init-child-health 0
 
   ;; Body CGP Parameters
   set num-body-inputs 5
@@ -171,23 +176,29 @@ to init-bodies [num]
     (cgp:random-brain num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
     ;(cgp:random-brain-n 0 num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
 
-    repeat random 10 [
-      mutate-body 1 0
+;    repeat random 10 [
+;      mutate-body 1 0
+;    ]
+    repeat num-pre-updates [
+      update-body true
     ]
   ]
 end
 
 to update-body [pre?]
-  ask link-neighbors [
+  let update-num ifelse-value pre? [max-cells-per-body][num-cell-updates]
+  ask up-to-n-of update-num link-neighbors [
     let cell-vars get-cell-vars-list
-    print cell-vars
+    ;print cell-vars
     let cell-updates []
     ask myself [set cell-updates cgp:evaluate cell-vars]
-    print cell-updates
+    ;print cell-updates
     let update-list decode-cell-updates pre? cell-updates
-    print update-list
+    ;print update-list
     update-cell-vars update-list
   ]
+  cell-death pre?
+  cell-birth pre?
 end
 
 to-report get-cell-vars-list
@@ -215,14 +226,18 @@ end
 
 to update-cell-vars [lst]
   set health trunc (health + (item 0 lst))
+  let prev-cell-type cell-type
   if cell-type != 1 [set cell-type add-cell-vars cell-type (item 1 lst) available-cell-types]
-  ;; adjust direction for rot cells
-
+  if cell-type != prev-cell-type [
+    set direction (ifelse-value cell-type = 2 or cell-type = 4 [one-of [0 90 180 270]]
+      cell-type = 3 [one-of [90 270]][0])
+  ]
+  set heading direction
   (ifelse cell-type = 2 or cell-type = 4 [
     set heading add-cell-vars heading ((item 2 lst) * 90) [0 90 180 270]
-    ] cell-type = 3 [
+  ] cell-type = 3 [
     set direction add-cell-vars direction ((item 2 lst) * 180) [90 270]
-    ])
+  ])
   update-cell-symbol
 end
 
@@ -251,6 +266,46 @@ to update-cell-symbol
   ]
   if cell-type = 6 [
     set shape "x"
+  ]
+end
+
+to cell-death [pre?]
+  let death-threshold ifelse-value pre? [threshold-pre-cell-death][threshold-cell-death]
+  if any? link-neighbors with [cell-type != 1 and health < death-threshold] [
+    let num-deaths count link-neighbors with [cell-type != 1 and health < death-threshold]
+    repeat num-deaths [
+      let iid [id] of one-of link-neighbors
+      find-cutpoints iid
+      ask one-of link-neighbors with [cell-type != 1 and health < death-threshold] [
+        if not is-cutpoint? [die]
+      ]
+    ]
+  ]
+end
+
+to cell-birth [pre?]
+  let birth-threshold ifelse-value pre? [threshold-pre-cell-birth][threshold-cell-birth]
+  if any? link-neighbors with [health > birth-threshold] and count link-neighbors <= max-cells-per-body [
+    let num-births count link-neighbors with [health > birth-threshold]
+    repeat num-births [
+      let possible-locs patch-set [neighbors4 with [count turtles-here = 0]] of link-neighbors
+      set possible-locs possible-locs with [available?]
+      if any? possible-locs and count link-neighbors <= max-cells-per-body [
+        let loc one-of possible-locs
+        hatch-cells 1 [
+          move-to loc
+          set id [who] of myself
+          create-link-from myself [tie hide-link]
+          set health init-child-health
+          set cell-type one-of available-cell-types
+          set direction (ifelse-value cell-type = 2 or cell-type = 4 [one-of [0 90 180 270]]
+            cell-type = 3 [one-of [90 270]]
+            [0])
+          set heading direction
+          update-cell-symbol
+        ]
+      ]
+    ]
   ]
 end
 
@@ -343,14 +398,17 @@ end
 
 to go
   ask gridarians [
-    if random-float 1 < 0.2 [
-      mutate-body 0.4 0.6
+    repeat num-updates [
+      update-body false
     ]
+;    if random-float 1 < 0.2 [
+;      mutate-body 0.4 0.6
+;    ]
     sense
     interact
     ;move-random
-    move-morph-limited
-    ;move-morph
+    ;move-morph-limited
+    move-morph
   ]
   replenish-balls
   visualize-cells
@@ -718,11 +776,11 @@ end
 GRAPHICS-WINDOW
 285
 10
-879
-605
+877
+603
 -1
 -1
-11.5
+9.583333333333334
 1
 10
 1
@@ -732,10 +790,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--25
-25
--25
-25
+-30
+30
+-30
+30
 1
 1
 1
@@ -744,9 +802,9 @@ ticks
 
 BUTTON
 135
-95
+150
 235
-130
+185
 go
 go
 T
@@ -761,9 +819,9 @@ NIL
 
 BUTTON
 15
-95
+150
 115
-130
+185
 NIL
 setup
 NIL
@@ -778,9 +836,9 @@ NIL
 
 BUTTON
 15
-320
-118
-355
+300
+115
+335
 NIL
 draw-cells
 T
@@ -795,9 +853,9 @@ NIL
 
 BUTTON
 135
-150
+300
 235
-185
+335
 NIL
 test
 T
@@ -817,7 +875,7 @@ SWITCH
 233
 visualize-cell-type-symbol?
 visualize-cell-type-symbol?
-0
+1
 1
 -1000
 
@@ -840,7 +898,7 @@ init-num-agents
 init-num-agents
 0
 30
-3.0
+5.0
 1
 1
 NIL
@@ -855,7 +913,7 @@ max-cells-per-body
 max-cells-per-body
 0
 100
-15.0
+20.0
 1
 1
 NIL
@@ -961,13 +1019,13 @@ Polygon -7500403 true true 270 270 225 210 210 210 255 270 165 270
 Polygon -7500403 true true 141 30 141 75 156 75 156 30 141 30
 
 clock-wise
-true
+false
 0
 Circle -7500403 false true 60 60 180
 Polygon -7500403 true true 223 205 283 115 163 115 223 205
 
 counter-clock-wise
-true
+false
 0
 Circle -7500403 false true 60 60 180
 Polygon -7500403 true true 223 93 283 183 163 183 223 93
