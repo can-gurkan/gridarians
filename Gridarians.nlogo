@@ -1,11 +1,33 @@
-extensions[fp palette]
+extensions[cgp fp palette math]
 
 globals [
+  grid-size
   available-cell-types
   num-balls
   num-walls
   sensing-distance
   time vis tin low
+
+  num-pre-updates
+  threshold-pre-cell-death
+  threshold-pre-cell-birth
+  delta-pre-cell-health
+
+  num-updates
+  threshold-cell-death
+  threshold-cell-birth
+  delta
+
+  threshold-cell-type-inc
+  threshold-cell-type-dec
+  threshold-cell-dir-inc
+  threshold-cell-dir-dec
+
+  num-body-inputs
+  num-body-outputs
+  num-body-cols
+  num-body-rows
+  body-lvlsback
 ]
 
 breed[gridarians gridarian]
@@ -14,33 +36,64 @@ breed[walls wall]
 breed[balls ball]
 
 gridarians-own[
-  seed-loc
-  my-cells
+  my-score
 ]
 
 cells-own [
   cell-type
   direction
+  health
   id
   is-cutpoint?
 ]
 
 to init-params
+  set grid-size 25
   set available-cell-types [2 3 4 5 6]
   set num-balls 5
   set num-walls 10
   set sensing-distance 3
+
+  ;; Pre-Birth Params
+  set num-pre-updates 6
+  set threshold-pre-cell-death -0.6
+  set threshold-pre-cell-birth 0.2
+  set delta-pre-cell-health 0.2
+
+  ;; Lifetime params
+  set num-updates 1
+  set threshold-cell-death -0.4
+  set threshold-cell-birth 0.2
+  set delta 0.1
+
+  set threshold-cell-type-inc 0.5
+  set threshold-cell-type-dec -0.5
+  set threshold-cell-dir-inc 0.5
+  set threshold-cell-dir-dec -0.5
+
+  ;; Body CGP Parameters
+  set num-body-inputs 5
+  set num-body-outputs 3
+  set num-body-cols 6
+  set num-body-rows 3
+  set body-lvlsback 2
 end
 
 to setup
   clear-all
   init-params
+  resize-grid grid-size
   ;init-custom-robot
   init-bodies init-num-agents
   setup-random-walls
   setup-random-balls
   visualize-cells
   reset-ticks
+end
+
+to resize-grid [n]
+  resize-world (-1 * n) n (-1 * n) n
+  set-patch-size (11.5 * 50) / (2 * n)
 end
 
 to setup-box-walls
@@ -77,9 +130,7 @@ end
 
 to init-custom-robot
   create-gridarians 1 [
-    set seed-loc [0 0]
     let seed-patch patch-at 0 0
-    ;set my-cells [[0 0 1] [-1 -1 2] [1 1 3]]
     let cell-list [[0 0 1] [-1 -1 2] [1 1 4] [1 2 4]]
     setxy ([pxcor] of seed-patch) ([pycor] of seed-patch)
     set heading 0
@@ -103,6 +154,7 @@ end
 to init-bodies [num]
   create-gridarians num [
     let seed-patch one-of patches with [count turtles-here = 0]
+    set my-score 0
     move-to seed-patch
     set heading 0
     set color white
@@ -111,12 +163,94 @@ to init-bodies [num]
       set id [who] of myself
       set cell-type 1
       set direction 0
+      set health 1
       set shape "dot"
       create-link-from myself [tie hide-link]
     ]
+    ;(cgp:random-brain <inputs> <outputs> <columsback> <rows> <cols> [0 1 2 3 4])
+    (cgp:random-brain num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
+    ;(cgp:random-brain-n 0 num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
+
     repeat random 10 [
       mutate-body 1 0
     ]
+  ]
+end
+
+to update-body [pre?]
+  ask link-neighbors [
+    let cell-vars get-cell-vars-list
+    print cell-vars
+    let cell-updates []
+    ask myself [set cell-updates cgp:evaluate cell-vars]
+    print cell-updates
+    let update-list decode-cell-updates pre? cell-updates
+    print update-list
+    update-cell-vars update-list
+  ]
+end
+
+to-report get-cell-vars-list
+  let encoded-type encode-var cell-type (fput 1 available-cell-types)
+  let encoded-direction encode-var heading [0 90 180 270]
+  let my-id id
+  let avg-cell-health mean [health] of cells with [id = my-id]
+  let agent-score ([my-score] of myself) / (1 + mean [my-score] of gridarians)
+  report (list health encoded-type encoded-direction avg-cell-health agent-score)
+end
+
+to-report encode-var [var lst]
+  report -1 + (2 / (length lst - 1)) * (item 0 fp:find-indices [x -> x = var] lst)
+end
+
+to-report decode-cell-updates [pre? lst]
+  ;; [health type direction]
+  let h sign (item 0 lst) * ifelse-value pre? [delta-pre-cell-health][delta]
+  let t item 1 lst
+  set t (ifelse-value t >= threshold-cell-type-inc [1] t <= threshold-cell-type-dec [-1][0])
+  let d item 2 lst
+  set d (ifelse-value d >= threshold-cell-dir-inc [1] d <= threshold-cell-dir-dec [-1][0])
+  report (list h t d)
+end
+
+to update-cell-vars [lst]
+  set health trunc (health + (item 0 lst))
+  if cell-type != 1 [set cell-type add-cell-vars cell-type (item 1 lst) available-cell-types]
+  ;; adjust direction for rot cells
+
+  (ifelse cell-type = 2 or cell-type = 4 [
+    set heading add-cell-vars heading ((item 2 lst) * 90) [0 90 180 270]
+    ] cell-type = 3 [
+    set direction add-cell-vars direction ((item 2 lst) * 180) [90 270]
+    ])
+  update-cell-symbol
+end
+
+to-report add-cell-vars [v i lst]
+  if not member? i [-1 0 1 -90 90 -180 180] [print "cell var update error" report false]
+  if i = 0 [report v]
+  let max-val max lst
+  let min-val min lst
+  (ifelse (v + i) <= max-val and (v + i) >= min-val [report v + i]
+    (v + i) > max-val [report min-val]
+    [report max-val])
+end
+
+to update-cell-symbol
+  if cell-type = 2 [
+    set shape "arrow2"
+  ]
+  if cell-type = 3 [
+    ifelse direction = 90 [set shape "clock-wise"][set shape "counter-clock-wise"]
+  ]
+  if cell-type = 4 [
+    set shape "T"
+  ]
+  if cell-type = 5 [
+    set shape "square3"
+  ]
+  if cell-type = 6 [
+    set shape "x"
   ]
 end
 
@@ -168,37 +302,6 @@ to mutate-body [birth-prob death-prob]
     ]
   ]
 end
-
-
-;to-report is-removable?
-;  ;; checks whether removing a cell disconnects the body
-;  ;; uses a complicated logic and does not work with diags
-;  ;; temporary, replace in the future
-;  let bool-list map [-> false] range 8
-;  print bool-list
-;  foreach range 8 [i ->
-;    let ipatch patch-at-heading-and-distance (i * 45) 1
-;    if ipatch != nobody and any? [cells-here] of ipatch [
-;      if [id] of one-of cells-here = id [
-;        set bool-list replace-item i bool-list true
-;      ]
-;    ]
-;  ]
-;  let num-true length filter [b -> b = true] bool-list
-;  let longest-chain 0
-;  let cur-chain 0
-;  set bool-list fp:flatten list bool-list bool-list
-;  foreach bool-list [b ->
-;    ifelse b [
-;      set cur-chain cur-chain + 1
-;    ] [
-;      set longest-chain max list longest-chain cur-chain
-;      set cur-chain 0
-;    ]
-;  ]
-;  set longest-chain max list longest-chain cur-chain
-;  report ifelse-value longest-chain >= num-true [true][false]
-;end
 
 to-report available?
   report (ifelse-value
@@ -320,6 +423,7 @@ to interact
         ]
       ]
     ]
+    set my-score my-score + score
   ]
 end
 
@@ -557,6 +661,17 @@ to-report get-vertex [iid i]
   report item i sort cells with [id = iid]
 end
 
+to-report trunc [x]
+  if x < -1 [set x -1]
+  if x > 1 [set x 1]
+  report x
+end
+
+to-report sign [x]
+  report math:signum x
+end
+
+
 to test
   ;test-fd-move
   test-change-pos
@@ -603,11 +718,11 @@ end
 GRAPHICS-WINDOW
 285
 10
-878
-604
+879
+605
 -1
 -1
-11.471
+11.5
 1
 10
 1
@@ -702,7 +817,7 @@ SWITCH
 233
 visualize-cell-type-symbol?
 visualize-cell-type-symbol?
-1
+0
 1
 -1000
 
