@@ -8,6 +8,9 @@ globals [
   sensing-distance
   time vis tin low
 
+  ticks-per-gen
+  mutation-rate
+
   num-pre-updates
   threshold-pre-cell-death
   threshold-pre-cell-birth
@@ -57,6 +60,9 @@ to init-params
   set num-walls 10
   set sensing-distance 3
 
+  set ticks-per-gen 1000
+  set mutation-rate 0.2
+
   ;; Pre-Birth Params
   set num-pre-updates 6
   set threshold-pre-cell-death -0.6
@@ -65,7 +71,7 @@ to init-params
 
   ;; Lifetime params
   set num-updates 1
-  set num-cell-updates 5
+  set num-cell-updates 1
   set threshold-cell-death -0.4
   set threshold-cell-birth 0.2
   set delta 0.1
@@ -89,7 +95,7 @@ to setup
   init-params
   resize-grid grid-size
   ;init-custom-robot
-  init-bodies init-num-agents
+  init-bodies init-num-agents 0
   setup-random-walls
   setup-random-balls
   visualize-cells
@@ -156,7 +162,7 @@ to init-custom-robot
   ]
 end
 
-to init-bodies [num]
+to init-bodies [num parent]
   create-gridarians num [
     let seed-patch one-of patches with [count turtles-here = 0]
     set my-score 0
@@ -172,13 +178,13 @@ to init-bodies [num]
       set shape "dot"
       create-link-from myself [tie hide-link]
     ]
-    ;(cgp:random-brain <inputs> <outputs> <columsback> <rows> <cols> [0 1 2 3 4])
-    (cgp:random-brain num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
-    ;(cgp:random-brain-n 0 num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
-
-;    repeat random 10 [
-;      mutate-body 1 0
-;    ]
+    ifelse parent = 0 [
+      ;(cgp:random-brain <inputs> <outputs> <columsback> <rows> <cols> [0 1 2 3 4])
+      (cgp:random-brain num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
+      ;(cgp:random-brain-n 0 num-body-inputs num-body-outputs body-lvlsback num-body-rows num-body-cols [0 5 6 10 12 19])
+    ] [
+      cgp:brain-from-parent parent mutation-rate
+    ]
     repeat num-pre-updates [
       update-body true
     ]
@@ -383,7 +389,7 @@ to visualize-cells
           [set pcolor black])
         ]
         cell-visualization = "by-agent" [
-          let cid [id] of c mod 9 ;change later
+          let cid [id] of c mod (count gridarians) ;change later
           set pcolor item cid color-list
       ])
     ]
@@ -398,18 +404,14 @@ end
 
 to go
   ask gridarians [
-    repeat num-updates [
-      update-body false
-    ]
-;    if random-float 1 < 0.2 [
-;      mutate-body 0.4 0.6
-;    ]
+    repeat num-updates [update-body false]
     sense
     interact
     ;move-random
     ;move-morph-limited
     move-morph
   ]
+  evolve
   replenish-balls
   visualize-cells
   tick
@@ -648,6 +650,21 @@ to replenish-balls
         set color yellow
       ]
     ]
+  ]
+end
+
+to evolve
+  if ticks mod ticks-per-gen = 0 and ticks > 0[
+    ;; kill the lowest fitness agent
+    ask min-one-of gridarians [my-score] [
+      cgp:clear-brain
+      ask link-neighbors [die]
+      die
+    ]
+    ;; produce the offspring of the highest fitness agent
+    let parent max-one-of gridarians [my-score]
+    init-bodies 1 parent
+    ask gridarians [set my-score 0]
   ]
 end
 
