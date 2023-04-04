@@ -33,6 +33,8 @@ globals [
   num-body-cols
   num-body-rows
   body-lvlsback
+
+  generations
 ]
 
 breed[gridarians gridarian]
@@ -88,6 +90,8 @@ to init-params
   set num-body-cols 6
   set num-body-rows 3
   set body-lvlsback 2
+
+  set generations 0
 end
 
 to setup
@@ -665,6 +669,7 @@ to evolve
     let parent max-one-of gridarians [my-score]
     init-bodies 1 parent
     ask gridarians [set my-score 0]
+    set generations generations + 1
   ]
 end
 
@@ -746,6 +751,12 @@ to-report sign [x]
   report math:signum x
 end
 
+;;; Observables
+
+to-report cell-frequency [t]
+  let tot sum [count link-neighbors] of gridarians
+  report (sum [count link-neighbors with [cell-type = t]] of gridarians) / tot
+end
 
 to test
   ;test-fd-move
@@ -935,6 +946,58 @@ max-cells-per-body
 1
 NIL
 HORIZONTAL
+
+MONITOR
+910
+15
+1080
+60
+Generation
+generations
+17
+1
+11
+
+PLOT
+910
+80
+1235
+230
+Avg Score per Gen
+Generations
+Score
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"score" 1.0 0 -16777216 true "" "if ticks mod ticks-per-gen = 0 [plot mean [my-score] of gridarians]"
+
+PLOT
+910
+245
+1305
+395
+Cell-Type Frequency
+Time
+Frequency
+0.0
+10.0
+0.0
+1.0
+true
+true
+"" ""
+PENS
+"seed-cell" 1.0 0 -955883 true "" "plot cell-frequency 1"
+"mover" 1.0 0 -10899396 true "" "plot cell-frequency 2"
+"rotator" 1.0 0 -13210332 true "" "plot cell-frequency 3"
+"sensor" 1.0 0 -13345367 true "" "plot cell-frequency 4"
+"compute" 1.0 0 -5825686 true "" "plot cell-frequency 5"
+"interact" 1.0 0 -2674135 true "" "plot cell-frequency 6"
 
 @#$#@#$#@
 @#$#@#$#@
