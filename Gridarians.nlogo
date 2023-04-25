@@ -1,4 +1,4 @@
-extensions[cgp fp palette math]
+extensions[cgp fp palette math csv]
 
 globals [
   grid-size
@@ -751,6 +751,46 @@ to-report sign [x]
   report math:signum x
 end
 
+to export-cgps
+  let export-list []
+  foreach sort gridarians [ g ->
+    ask g [
+      set export-list lput cgp:get-brain-as-list export-list
+    ]
+  ]
+  print (word "exports/exported-cgps/ex-cgp" date-and-time ".csv")
+  csv:to-file (word "exports/exported-cgps/ex-cgp-" remove ":" date-and-time ".csv") export-list
+end
+
+to import-cgps
+  let file-path "exports/exported-cgps/"
+  let file-name "ex-cgp014316.936 AM 25-Apr-2023.csv"
+  let import-list csv:from-file (word file-path file-name)
+  if-else count gridarians > length import-list [
+    print "Error: agent and cgp number mismatch."
+  ] [
+    let glist sort gridarians
+    foreach range length import-list [ i ->
+      ask item i glist [
+        ;print (read-from-string item 0 item i import-list)
+        let cgp-list map read-from-string item i import-list
+        cgp:brain-from-list cgp-list
+      ]
+    ]
+  ]
+
+end
+
+to export-world-state
+  export-world (word "exports/exported-worlds/exported-world-" remove ":" date-and-time ".csv")
+end
+
+to import-world-state
+  let file-path "exports/exported-worlds/"
+  let file-name "exported-world-013859.918 AM 25-Apr-2023.csv"
+  import-world (word file-path file-name)
+end
+
 ;;; Observables
 
 to-report cell-frequency [t]
@@ -961,7 +1001,7 @@ generations
 PLOT
 910
 80
-1235
+1305
 230
 Avg Score per Gen
 Generations
@@ -971,10 +1011,11 @@ Score
 0.0
 1.0
 true
-false
+true
 "" ""
 PENS
-"score" 1.0 0 -16777216 true "" "if ticks mod ticks-per-gen = 0 [plot mean [my-score] of gridarians]"
+"avg score" 1.0 0 -16777216 true "" "if ticks mod ticks-per-gen = 0 [plot mean [my-score] of gridarians]"
+"max score" 1.0 0 -2674135 true "" "if ticks mod ticks-per-gen = 0 [plot [my-score] of max-one-of gridarians [my-score]]"
 
 PLOT
 910
@@ -982,7 +1023,7 @@ PLOT
 1305
 395
 Cell-Type Frequency
-Time
+Generations
 Frequency
 0.0
 10.0
@@ -992,12 +1033,12 @@ true
 true
 "" ""
 PENS
-"seed-cell" 1.0 0 -955883 true "" "plot cell-frequency 1"
-"mover" 1.0 0 -10899396 true "" "plot cell-frequency 2"
-"rotator" 1.0 0 -13210332 true "" "plot cell-frequency 3"
-"sensor" 1.0 0 -13345367 true "" "plot cell-frequency 4"
-"compute" 1.0 0 -5825686 true "" "plot cell-frequency 5"
-"interact" 1.0 0 -2674135 true "" "plot cell-frequency 6"
+"seed-cell" 1.0 0 -955883 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 1]"
+"mover" 1.0 0 -10899396 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 2]"
+"rotator" 1.0 0 -13210332 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 3]"
+"sensor" 1.0 0 -13345367 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 4]"
+"compute" 1.0 0 -5825686 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 5]"
+"interact" 1.0 0 -2674135 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 6]"
 
 @#$#@#$#@
 @#$#@#$#@
