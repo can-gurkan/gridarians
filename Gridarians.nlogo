@@ -10,6 +10,7 @@ globals [
 
   ticks-per-gen
   mutation-rate
+  rebirth-each-gen?
 
   num-pre-updates
   threshold-pre-cell-death
@@ -64,6 +65,7 @@ to init-params
 
   set ticks-per-gen 1000
   set mutation-rate 0.2
+  set rebirth-each-gen? true
 
   ;; Pre-Birth Params
   set num-pre-updates 6
@@ -659,6 +661,14 @@ end
 
 to evolve
   if ticks mod ticks-per-gen = 0 and ticks > 0[
+    if rebirth-each-gen? [
+      ask gridarians [
+        ask link-neighbors with [cell-type != 1][
+          die
+        ]
+        repeat num-pre-updates [update-body true]
+      ]
+    ]
     ;; kill the lowest fitness agent
     ask min-one-of gridarians [my-score] [
       cgp:clear-brain
@@ -772,13 +782,11 @@ to import-cgps
     let glist sort gridarians
     foreach range length import-list [ i ->
       ask item i glist [
-        ;print (read-from-string item 0 item i import-list)
         let cgp-list map read-from-string item i import-list
         cgp:brain-from-list cgp-list
       ]
     ]
   ]
-
 end
 
 to export-world-state
@@ -844,8 +852,8 @@ end
 GRAPHICS-WINDOW
 285
 10
-877
-603
+874
+600
 -1
 -1
 9.583333333333334
@@ -965,8 +973,8 @@ SLIDER
 init-num-agents
 init-num-agents
 0
-30
-5.0
+100
+10.0
 1
 1
 NIL
