@@ -1,0 +1,6 @@
+to write-prompt-config [ptype pname]
+  py:run "from src.config.override_gin import write_prompt_config"
+  py:set "prompt_type" ptype
+  py:set "prompt_name" pname
+  py:run "write_prompt_config(prompt_type, prompt_name)"
+end

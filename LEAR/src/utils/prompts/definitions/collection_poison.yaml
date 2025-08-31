@@ -1,0 +1,110 @@
+name: collection_poison
+comment_instruction: |
+  When writing your code, please add detailed comments to explain your approach and decision-making process.
+
+base_prompt: |
+  You are an expert NetLogo coder. You are trying to improve the code of a given turtle agent that is trying to collect as much food as possible and avoid running into poison deposits.
+
+  Improve the given agent movement code following these precise specifications:
+
+  Here is the current code of the turtle agent:
+
+  ```
+    {original_code}
+  ```
+
+  INPUT CONTEXT:
+  - The agent has access to two variables containing information about its environment:
+    - food-observations is a list that contains three elements representing distances to food in three cone regions of 20 degrees each.
+    - poison-observations is a list that contains three elements representing distances to poison in three cone regions of 20 degrees each.
+    - The first item in these lists gives the distances to the nearest food or poison in the left cone, the second is the right cone, and the third is the front cone
+    - Each value encodes the distance to nearest food or poison source where a value of 0 indicates no food or poison
+    - Non-zero lower values indicate closer to food or poison
+    - Use these to inform movement strategy
+
+  SIMULATION ENVIRONMENT:
+  - The turtle agent is in a food collection simulation
+  - Poison decreases the turtle's energy.
+  - The goal is to collect as much food as possible while avoiding poison.
+  - The turtle agent can detect food in three cone regions encoded in the input list
+  - The food sources are randomly distributed in the environment
+
+  CONSTRAINTS:
+  1. Do not include code to kill or control any other agents
+  2. Do not include code to interact with the environment
+  3. Do not include code to change the environment
+  4. Do not include code to create new agents
+  5. Do not include code to create new food sources
+  6. Do not include code to change the rules of the simulation
+  7. Follow NetLogo syntax and constraints
+  8. Do not use any undefined variables or commands besides the input variable
+  9. Focus on movement strategies based on the input variable
+
+  VALID COMMANDS AND SYNTAX:
+      - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+      - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+      - The syntax of the if primitive is as follows: if boolean [ commands ]
+      - The syntax of the ifelse primitive is as follows: ifelse boolean [ commands1 ] [ commands2 ]
+      - An ifelse block  that contains multiple boolean conditions must be enclosed in parentheses as follows:
+      (ifelse boolean1 [ commands1 ] boolean2 [ commands2 ] ... [ elsecommands ])
+
+  ABSOLUTELY FORBIDDEN:
+      - DO NOT use "of" primitives - will cause errors
+      - DO NOT use "ask", "with", "turtles", or "patches"
+      - DO NOT use any undefined variables
+      - DO NOT use while loops or recursive constructs
+
+  ERROR PREVENTION:
+      - Ensure all bracket pairs match
+      - Make sure every movement command has a parameter
+      - Keep values within reasonable ranges (-1000 to 1000)
+      - Ensure at least one movement command is included
+      - There is no such thing as an `else` statement in NetLogo
+
+  STRATEGIC GOALS:
+  1. Balance exploration, food-seeking, and poison avoidance behavior
+  2. Respond to sensor readings intelligently
+  3. Combine different movement patterns
+  4. Be creative in your movement strategy
+
+  The code must be runnable in NetLogo in the context of a turtle. Do not write any procedures and assume that the code will be run in an ask turtles block.
+  Return ONLY the changed NetLogo code. Do not include any explanations or outside the code block.
+
+  ```
+  [Your changed NetLogo code goes here]
+        ```
+
+one_shot_example: |
+
+  Example:
+  Current Rule: fd 1 rt random 45
+  Updated Rule: ifelse (item 0 food-observations > 0) and (item 0 poison-observations = 0) [lt 10 fd 1] [ifelse (item 1 food-observations > 0) and (item 1 poison-observations = 0) [rt 10 fd 1] [fd 1 rt random 20]]
+  Explanation: This rule checks if there's food in the left cone with no poison, turning left to approach it. If not, it checks the right cone. If neither condition is met, it moves forward with some random turning.
+
+two_shot_example: |
+
+  Another Example:
+  Current Rule: rt 30 fd 1 lt 15
+  Updated Rule:
+  ifelse (item 2 food-observations > 0) and (item 2 poison-observations = 0) [
+    fd 1.5
+  ] [
+    ifelse (item 0 poison-observations > 0) and (item 0 poison-observations < 3) [
+      rt 45 fd 1
+    ] [
+      ifelse (item 1 poison-observations > 0) and (item 1 poison-observations < 3) [
+        lt 45 fd 1
+      ] [
+        ifelse (item 0 food-observations > 0) [
+          lt 15 fd 0.8
+        ] [
+          ifelse (item 1 food-observations > 0) [
+            rt 15 fd 0.8
+          ] [
+            fd 0.5 rt random 30
+          ]
+        ]
+      ]
+    ]
+  ]
+  Explanation: This rule prioritizes food directly ahead while actively avoiding nearby poison. It turns away from poison when detected at close range. If no immediate threat exists, it moves toward food in either side cone, or explores randomly.

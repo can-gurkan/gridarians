@@ -1,0 +1,35 @@
+to setup-params-default
+  set num-llm-agents 10
+  set num-food-sources 30
+  set ticks-per-generation 500
+  set logging? true
+  set llm-mutation? true
+  set text-based-evolution false
+  set llm-type "groq"
+  
+  ;; initial rules
+  set init-rule "lt random 20 rt random 20 fd 1"
+  set init-pseudocode "Take left turn randomly within 0-20 degrees, then take right turn randomly within 0-20 degrees and move forward 1"
+  
+  ;; selection algo params
+  set selection "tournament" ;"fitness-prop"
+  set num-parents 2
+  set tournament-size 8
+  set selection-pressure 0.8
+end
+
+to setup-params-llm-exp
+  set num-llm-agents 10
+  set num-food-sources 30
+  set ticks-per-generation 500
+  set logging? true
+  set llm-mutation? true
+  set text-based-evolution false
+  set llm-type "groq"
+  
+  ;; selection algo params
+  set selection "tournament" ;"fitness-prop"
+  set num-parents 2
+  set tournament-size 7
+  set selection-pressure 0.8
+end

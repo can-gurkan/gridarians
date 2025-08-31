@@ -1,0 +1,784 @@
+name: evolution_strategies
+value:
+  simple:
+    pseudocode_prompt: |
+      You are an AI assistant tasked with improving the movement code for a turtle agent in NetLogo. Your goal is to create new pseudocode with slight modifications using paradigms of genetic programming. The improved code should help the agent collect as much food as possible while adhering to specific constraints and strategic goals.
+
+      Evolution Goals:
+      1. Optimize movement for efficient food collection
+      2. Balance exploration and exploitation
+      3. Maintain simple, efficient NetLogo commands
+      4. Consider both immediate food sources and long-term survival
+
+      You will be given this initial pseudocode to improve:
+
+      <initial_pseudocode>
+      {initial_pseudocode}
+      </initial_pseudocode>
+
+      STRICT GUIDELINES FOR PSEUDOCODE CREATION:
+
+      1. FOCUS ON THESE MOVEMENT CONCEPTS ONLY:
+         - "Move forward" (will become fd or forward in NetLogo)
+         - "Turn right" (will become rt or right in NetLogo)
+         - "Turn left" (will become lt or left in NetLogo)
+         - Randomness (will use random or random-float in NetLogo)
+         - Simple trigonometric concepts (sin, cos)
+         - Conditional movements based on food sensor readings
+
+      2. ABSOLUTELY FORBIDDEN CONCEPTS:
+         - DO NOT include any reference to "of" relationships between agents
+         - DO NOT create or reference any variables that don't exist
+         - DO NOT include asking other agents to perform actions
+         - DO NOT include creating or killing agents
+         - DO NOT include setting or changing environment variables
+
+      3. ALLOWED STRUCTURE:
+         - You may include "if/else" logic based on the "input" list values
+         - Basic example: "If there is food to the left, turn left and move forward, otherwise turn randomly and move forward"
+
+      4. FORMATTING:
+         - Keep the pseudocode simple, concise and readable
+         - Use plain English descriptions of movement patterns
+         - Focus on turtle movement logic only
+
+      To improve the pseudocode, follow these guidelines:
+      1. Analyze the initial pseudocode to understand the existing movement strategy
+      2. Consider ways to balance exploration and food-seeking behavior
+      3. Combine different movement patterns to create a more effective strategy
+      4. Ensure that the new pseudocode adheres to the given constraints
+
+      Present your improved pseudocode enclosed in triple backticks:
+
+      ```
+      [Your improved pseudocode here]
+      ```
+
+      Do not include any explanations outside the code block.
+    code_prompt: |
+      You are tasked with converting pseudocode into well-structured NetLogo code for agent movement. Your goal is to generate only the movement code based on the provided pseudocode, adhering to specific constraints and requirements.
+
+      Here is the pseudocode you will be working with:
+
+      <pseudocode>
+      {pseudocode}
+      </pseudocode>
+
+      STRICT GUIDELINES FOR CODE GENERATION:
+
+      1. UNDERSTANDING THE PSEUDOCODE:
+         - Focus on understanding the FUNCTIONALITY described in the pseudocode
+         - DO NOT use variable names from the pseudocode directly in your NetLogo code
+         - Translate conceptual descriptions into valid NetLogo syntax
+         - The pseudocode is a guideline for behavior, not a direct translation template
+
+      2. VALID COMMANDS ONLY:
+         - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+         - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+         - All commands must be properly space-separated: "fd 1" not "fd1"
+
+      3. ABSOLUTELY FORBIDDEN:
+         - DO NOT use the "of" primitive/reporter - this will always cause errors
+         - DO NOT use any non-existent or undefined variables
+         - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+         - DO NOT use "set", "let", or create any variables
+         - DO NOT include any infinite loops - avoid "while" or "loop" constructs
+         - DO NOT copy variable names from pseudocode if they don't exist in NetLogo
+
+      4. ALLOWED STRUCTURE:
+         - You may use "if/ifelse" statements with item checks on the "input" list
+         - Basic example: ifelse item 0 input > 0 [fd 1] [rt 90 fd 2]
+         - For complex conditions, ensure proper bracket nesting and balance
+         - Make sure every opening bracket '[' has a matching closing bracket ']'
+         - Remember "input" is the only valid variable you can reference
+
+      5. FORMATTING:
+         - Each command (fd/rt/lt) must be followed by a number or simple expression
+         - All commands must be properly separated by spaces
+         - Keep the code simple, focused only on movement
+         - Maximum nesting depth should be 3 levels to avoid complexity errors
+
+      6. VALUE CONSTRAINTS:
+         - All numeric values should be between -1000 and 1000
+         - Prefer positive values when possible
+         - For random functions, use reasonable ranges (e.g., random 360 for turning)
+         - Avoid complex mathematical expressions - keep calculations simple
+
+      7. ERROR PREVENTION:
+         - Ensure each condition has both true and false branches in ifelse statements
+         - Verify that each command has a valid parameter
+         - Check that no undefined variables or functions are referenced
+         - Make sure bracket pairs are properly matched
+         - Include at least one movement command (fd, bk, rt, lt)
+
+      8. ROBUST IMPLEMENTATION:
+         - Generate code that is resilient to edge cases
+         - If pseudocode mentions a variable that doesn't exist in NetLogo, translate its purpose
+           without using the variable name (e.g., if pseudocode uses "angle", implement the
+           calculation directly without referencing "angle")
+         - Focus on capturing the intent and behavior, not the exact syntax
+
+      Your task is to carefully analyze the provided pseudocode and translate it into NetLogo code that represents the agent's movement strategy. Focus solely on the movement aspects described in the pseudocode.
+
+      Present your generated NetLogo code enclosed in triple backticks, following this format:
+
+      ```
+      [Your generated NetLogo code here]
+      ```
+
+      Ensure that your code accurately reflects the movement strategy described in the pseudocode while adhering to NetLogo syntax and the specified constraints. Do not add any explanations or comments outside the code block.
+  complex:
+    pseudocode_prompt: |
+      You are an expert NetLogo pseudocode creator specializing in complex turtle agent movement. Your task is to evolve the existing pseudocode into a more sophisticated version, balancing simplicity with advanced behavior patterns.
+
+      CURRENT PSEUDOCODE TO EVOLVE:
+      ```
+      {pseudocode}
+      ```
+
+      EVOLUTIONARY ADVANCEMENT OBJECTIVES:
+
+      1. PROGRESSIVE COMPLEXITY ENHANCEMENT:
+         - Build upon the existing pseudocode's core logic
+         - Add 1-2 advanced movement concepts or conditional behaviors
+         - Incorporate more sophisticated decision-making based on food sensor inputs
+         - Explore mathematical relationships (trigonometric, probabilistic) for movement
+
+      2. INNOVATION GUIDELINES:
+         - Introduce adaptive movement that responds to changing environments
+         - Create multi-stage movement sequences that balance local and global exploration
+         - Develop intelligent turning behaviors that optimize path trajectories
+         - Implement energy-efficient movement strategies that minimize unnecessary actions
+         - Consider emergent swarm-like behaviors when multiple agents use this rule
+
+      3. VALID MOVEMENT CONCEPTS ONLY:
+         - "Move forward" (will become fd or forward in NetLogo)
+         - "Turn right" (will become rt or right in NetLogo)
+         - "Turn left" (will become lt or left in NetLogo)
+         - "Move backward" (will become bk or back in NetLogo)
+         - Randomness (will use random or random-float in NetLogo)
+         - Trigonometric concepts (sin, cos)
+         - Conditional movements based on food sensor readings (the "input" list)
+
+      4. ABSOLUTELY FORBIDDEN CONCEPTS:
+         - DO NOT include any reference to "of" relationships between agents
+         - DO NOT create or reference any variables that don't exist
+         - DO NOT include asking other agents to perform actions
+         - DO NOT include creating or killing agents
+         - DO NOT include setting or changing environment variables
+         - DO NOT use loops or recursive patterns
+
+      5. ALLOWED STRUCTURE:
+         - You may include "if/else" logic based on the "input" list values
+         - Example: "If there is food to the left, turn left and move forward, otherwise turn right at a random angle between 30-60 degrees and move forward"
+         - You may combine multiple movement commands in sequence
+         - You may use mathematical concepts like sine and cosine for turning angles
+
+      6. SOPHISTICATED PATTERN EXAMPLES:
+         - Adaptive Exploration: "Move forward a small random distance (0-2), then turn right by an angle based on sine of a random value (0-90), then move forward again"
+         - Sensor-Responsive: "If food is detected on the left, turn left by an angle proportional to the food's distance and move forward; otherwise turn right randomly and move forward further"
+         - Trigonometric Navigation: "Move forward, then turn right by an angle calculated using sine of a random value multiplied by 45, then move forward a variable distance"
+         - Multi-Stage Movement: "Move forward a short distance, turn right by an angle based on cosine of a random value, move forward again, then turn left by a small angle"
+
+      7. FORMATTING:
+         - Keep the pseudocode readable and focused on movement logic
+         - Use plain English descriptions of movement patterns
+         - Be specific about how food sensor readings influence movement
+         - Be clear about mathematical relationships while keeping them implementable
+
+      Present your evolved pseudocode enclosed in triple backticks:
+
+      ```
+      [Your evolved pseudocode here]
+      ```
+
+      Do not include any explanations outside the code block.
+    code_prompt: |
+      You are an expert NetLogo programmer tasked with translating sophisticated movement pseudocode into valid, executable NetLogo code. Your goal is to faithfully implement the pseudocode while ensuring the code adheres to NetLogo syntax and execution constraints.
+
+      PSEUDOCODE TO TRANSLATE:
+      ```
+      {pseudocode}
+      ```
+
+      TRANSLATION REQUIREMENTS:
+
+      1. UNDERSTANDING THE PSEUDOCODE:
+         - Focus on understanding the FUNCTIONALITY described in the pseudocode
+         - DO NOT use variable names from the pseudocode directly in your NetLogo code
+         - Translate conceptual descriptions into valid NetLogo syntax
+         - The pseudocode is a guideline for behavior, not a direct translation template
+
+      2. VALID COMMANDS AND SYNTAX:
+         - Movement: fd/forward, rt/right, lt/left, bk/back
+         - Reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+         - Format: [command] [number | expression] with proper spacing
+         - All commands must be properly space-separated: "fd 1" not "fd1"
+
+      3. COMPLEXITY IMPLEMENTATION:
+         - Accurately implement all described movement patterns
+         - Convert trigonometric concepts to NetLogo sin/cos functions
+         - Translate conditional logic to ifelse statements with proper brackets
+         - Implement sensor-responsive behavior using the "input" list only
+         - Convert multi-stage movements into appropriate command sequences
+
+      4. ABSOLUTELY FORBIDDEN:
+         - DO NOT use the "of" primitive/reporter - this will cause errors
+         - DO NOT use any non-existent or undefined variables
+         - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+         - DO NOT use "set", "let", or create any variables
+         - DO NOT include any infinite loops - avoid "while" or "loop" constructs
+         - DO NOT copy variable names from pseudocode if they don't exist in NetLogo
+
+      5. ALLOWED STRUCTURE:
+         - You may use "if/ifelse" statements with item checks on the "input" list
+         - Example: ifelse item 0 input > 0 [lt (45 - item 0 input / 2) fd 1] [rt random 45 fd 2]
+         - For complex or nested conditions, ensure proper bracket nesting and balance
+         - Make sure every opening bracket '[' has a matching closing bracket ']'
+         - Maximum nesting depth should be 3 levels to avoid complexity errors
+         - Remember "input" is the only valid variable you can reference
+
+      6. ADVANCED PATTERN IMPLEMENTATION:
+         - For random movement: Use random or random-float with appropriate ranges
+         - For trigonometric functions: Use sin/cos with appropriate arguments
+         - For sensor-responsive behavior: Use ifelse with item 0, 1, or 2 of the input list
+         - For multi-stage movements: Implement as a sequence of commands
+         - For complex expressions: Use parentheses to ensure correct order of operations
+
+      7. ERROR PREVENTION:
+         - Ensure each condition has both true and false branches in ifelse statements
+         - Verify that each command has a valid parameter
+         - Enclose complex expressions in parentheses for clarity: sin (random 90)
+         - Make sure bracket pairs are properly matched and nested
+         - Include at least one movement command (fd, bk, rt, lt)
+         - Keep all numeric values between -1000 and 1000
+
+      8. ROBUST IMPLEMENTATION:
+         - Generate code that is resilient to edge cases
+         - If pseudocode mentions a variable that doesn't exist in NetLogo, translate its purpose
+           without using the variable name (e.g., if pseudocode uses "angle", implement the
+           calculation directly without referencing "angle")
+         - Focus on capturing the intent and behavior, not the exact syntax
+
+      Your task is to carefully analyze the provided pseudocode and translate it into well-formed NetLogo code that represents the described movement strategy. Focus on creating executable code that accurately implements the sophisticated patterns described in the pseudocode.
+
+      Present your generated NetLogo code enclosed in triple backticks:
+
+      ```
+      [Your generated NetLogo code here]
+      ```
+
+      Ensure that your code accurately reflects the movement strategy described in the pseudocode while adhering to NetLogo syntax and the specified constraints. Do not add any explanations or comments outside the code block.
+  collection_poison_avoidance_zero_shot:
+    pseudocode_prompt: |
+      You are an expert NetLogo pseudocode creator specializing in complex turtle agent movement.
+      You are trying to improve the given pseudocode of a given turtle agent that is trying to avoid poison sources.
+
+      Here is the current pseudocode of the turtle agent:
+      ```
+      {current_pseudocode}
+      ```
+
+      Improve the given agent movement pseudocode following these precise specifications:
+
+      INPUT CONTEXT:
+      - The agent has access to two variables containing information about its environment:
+      - food-observations is a list that contains three elements representing distances to food in three cone regions of 20 degrees each.
+      - poison-observations is a list that contains three elements representing distances to poison in three cone regions of 20 degrees each.
+      - The first item in these lists gives the distances to the nearest food or poison in the left cone, the second is the right cone, and the third is the front cone
+      - Each value encodes the distance to nearest food or poison source where a value of 0 indicates no food or poison
+      - Non-zero lower values indicate closer to food or poison
+      - Use these to inform movement strategy
+
+      SIMULATION ENVIRONMENT:
+      - The turtle agent is in a food collection simulation
+      - Poison decreases the turtle's energy.
+      - The goal is to collect as much food as possible while avoiding poison.
+      - The turtle agent can detect food in three cone regions encoded in the input list
+      - The food sources are randomly distributed in the environment
+
+      EVOLUTIONARY ADVANCEMENT OBJECTIVES:
+
+      1. PROGRESSIVE COMPLEXITY ENHANCEMENT:
+      - Build upon the existing pseudocode's core logic
+      - Add advanced movement concepts for poison detection and avoidance
+      - Incorporate more sophisticated decision-making based on poison sensor inputs
+
+      2. INNOVATION GUIDELINES:
+      - Introduce adaptive movement that responds to imminent poison threats
+      - Create multi-stage movement sequences that optimize escape routes
+      - Develop intelligent turning behaviors that maximize distance from poison
+      - Implement energy-efficient movement strategies that minimize exposure
+      - Consider emergent evasion behaviors
+
+      3. VALID MOVEMENT CONCEPTS ONLY:
+      - "Move forward" (will become fd or forward in NetLogo)
+      - "Turn right" (will become rt or right in NetLogo)
+      - "Turn left" (will become lt or left in NetLogo)
+      - "Move backward" (will become bk or back in NetLogo)
+      - Conditional movements based on poison sensor readings (the "poison-observations" list)
+
+      4. ABSOLUTELY FORBIDDEN CONCEPTS:
+      - DO NOT include any reference to "of" relationships between agents
+      - DO NOT create or reference any variables that don't exist
+      - DO NOT ask other agents to perform actions
+      - DO NOT create or kill any agents
+      - DO NOT change the environment or any variables
+      - DO NOT use loops or recursive patterns
+
+      5. ALLOWED STRUCTURE:
+      - Do not use any variables other than "food-observations" and "poison-observations"
+      - You may include "if/else" logic based on the list values of "food-observations" and "poison-observations"
+      - You may combine multiple movement commands in sequence
+
+      6. FORMATTING:
+      - Keep the pseudocode readable and focused on movement logic
+      - Use plain English descriptions of movement patterns
+      - Be specific about how poison sensor readings influence movement
+
+      Present your evolved pseudocode enclosed in triple backticks. You may include comments in the pseudocode detailing your strategy. Do not include any explanations outside the code block:
+
+      ```
+      [Your evolved pseudocode here]
+      ```
+    code_prompt: |
+      You are an expert NetLogo programmer tasked with converting pseudocode into valid, executable NetLogo code.
+      Your goal is to faithfully implement the pseudocode while ensuring the code adheres to NetLogo syntax and execution constraints.
+
+      PSEUDOCODE TO TRANSLATE:
+      ```
+      {pseudocode}
+      ```
+
+      TRANSLATION REQUIREMENTS:
+
+      1. UNDERSTANDING THE PSEUDOCODE:
+      - Focus on understanding the FUNCTIONALITY described in the pseudocode
+      - DO NOT use variable names from the pseudocode directly in your NetLogo code
+      - Translate conceptual descriptions into valid NetLogo syntax
+      - The pseudocode is a guideline for behavior, not a direct translation template
+
+      2. CONSTRAINTS:
+      - Do not include code to kill or control any other agents
+      - Do not include code to interact with the environment
+      - Do not include code to change the environment
+      - Do not include code to create new agents
+      - Do not include code to create new poison sources
+      - Do not include code to change the rules of the simulation
+      - Follow NetLogo syntax and constraints
+      - Do not use any undefined variables or commands besides the food-observations and poison-observations variables
+      - Focus on movement strategies based on the food-observations and poison-observations variables
+
+      3. VALID COMMANDS AND SYNTAX:
+      - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+      - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+      - The syntax of the if primitive is as follows: if boolean [ commands ]
+      - The syntax of the ifelse primitive is as follows: ifelse boolean [ commands1 ] [ commands2 ]
+      - An ifelse block that contains multiple boolean conditions must be enclosed in parentheses as follows:
+      (ifelse boolean1 [ commands1 ] boolean2 [ commands2 ] ... [ elsecommands ])
+
+      4. COMPLEXITY IMPLEMENTATION:
+      - Accurately implement all described movement patterns
+      - Translate conditional logic to ifelse statements with proper brackets
+      - Implement sensor-responsive behavior using the "food-observations" and "poison-observations" lists only
+      - Do not use any variables other than "food-observations" and "poison-observations" in your code
+      - Convert multi-stage movements into appropriate command sequences
+
+      5. ABSOLUTELY FORBIDDEN:
+      - DO NOT use the "of" primitive/reporter - this will cause errors
+      - DO NOT use any non-existent or undefined variables
+      - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+      - DO NOT use "set", "let", or create any variables
+      - DO NOT include any infinite loops - avoid "while" or "loop" constructs
+      - DO NOT copy variable names from pseudocode and do not use any variables other than "food-observations" and "poison-observations"
+      - Strictly adhere to using ONLY the provided 'food-observations' and 'poison-observations' variables. Do not invent new ones.
+
+      6. ALLOWED STRUCTURE:
+      - You may use "if/ifelse" statements with item checks on the "food-observations" and "poison-observations" lists
+      - For complex or nested conditions, ensure proper bracket nesting and balance
+      - Make sure every opening bracket '[' has a matching closing bracket ']'
+      - Remember "food-observations" and "poison-observations" are the only valid variables you can reference
+
+      7. ERROR PREVENTION:
+      - Ensure each condition has both true and false branches in ifelse statements
+      - Verify that each command has a valid parameter
+      - Make sure bracket pairs are properly matched and nested
+      - Keep all numeric values between -1000 and 1000
+
+      8. ROBUST IMPLEMENTATION:
+      - Generate code that is resilient to edge cases
+      - If pseudocode mentions a variable that doesn't exist in NetLogo (like 'food_left' or 'poison_ahead'), translate its purpose using `food-observations` or `poison-observations` (e.g., `item 0 food-observations > 0` or `item 2 poison-observations > 0`) without using the non-existent variable name.
+      - Focus on capturing the intent and behavior, not the exact syntax
+
+      Your task is to carefully analyze the provided pseudocode and translate it into well-formed NetLogo code that represents the described movement strategy.
+      The code must be runnable in NetLogo in the context of a turtle. Do not write any procedures and assume that the code will be run in an ask turtles block.
+      Return ONLY the changed NetLogo code. Do not include any explanations or outside the code block.
+
+      Present your generated NetLogo code enclosed in triple backticks:
+
+      ```
+      [Your generated NetLogo code here]
+      ```
+  collection_poison_avoidance_one_shot:
+    pseudocode_prompt: |
+      You are an expert NetLogo pseudocode creator specializing in complex turtle agent movement.
+      You are trying to improve the given pseudocode of a given turtle agent that is trying to avoid poison sources.
+
+      Here is the current pseudocode of the turtle agent:
+      ```
+      {current_pseudocode}
+      ```
+
+      Improve the given agent movement pseudocode following these precise specifications:
+
+      INPUT CONTEXT:
+      - The agent has access to two variables containing information about its environment:
+        - food-observations is a list that contains three elements representing distances to food in three cone regions of 20 degrees each.
+        - poison-observations is a list that contains three elements representing distances to poison in three cone regions of 20 degrees each.
+      - The first item in these lists gives the distances to the nearest food or poison in the left cone, the second is the right cone, and the third is the front cone
+      - Each value encodes the distance to nearest food or poison source where a value of 0 indicates no food or poison
+      - Non-zero lower values indicate closer to food or poison
+      - Use these to inform movement strategy
+
+      SIMULATION ENVIRONMENT:
+      - The turtle agent is in a food collection simulation
+      - Poison decreases the turtle's energy.
+      - The goal is to collect as much food as possible while avoiding poison.
+      - The turtle agent can detect food in three cone regions encoded in the input list
+      - The food sources are randomly distributed in the environment
+
+      EVOLUTIONARY ADVANCEMENT OBJECTIVES:
+
+      1. PROGRESSIVE COMPLEXITY ENHANCEMENT:
+      - Build upon the existing pseudocode's core logic
+      - Add advanced movement concepts for poison detection and avoidance
+      - Incorporate more sophisticated decision-making based on poison sensor inputs
+
+      2. INNOVATION GUIDELINES:
+      - Introduce adaptive movement that responds to imminent poison threats
+      - Create multi-stage movement sequences that optimize escape routes
+      - Develop intelligent turning behaviors that maximize distance from poison
+      - Implement energy-efficient movement strategies that minimize exposure
+      - Consider emergent evasion behaviors
+
+      3. VALID MOVEMENT CONCEPTS ONLY:
+      - "Move forward" (will become fd or forward in NetLogo)
+      - "Turn right" (will become rt or right in NetLogo)
+      - "Turn left" (will become lt or left in NetLogo)
+      - "Move backward" (will become bk or back in NetLogo)
+      - Conditional movements based on poison sensor readings (the "poison-observations" list)
+
+      4. ABSOLUTELY FORBIDDEN CONCEPTS:
+      - DO NOT include any reference to "of" relationships between agents
+      - DO NOT create or reference any variables that don't exist
+      - DO NOT ask other agents to perform actions
+      - DO NOT create or kill any agents
+      - DO NOT change the environment or any variables
+      - DO NOT use loops or recursive patterns
+
+      5. ALLOWED STRUCTURE:
+      - Do not use any variables other than "food-observations" and "poison-observations"
+      - You may include "if/else" logic based on the list values of "food-observations" and "poison-observations"
+      - You may combine multiple movement commands in sequence
+
+      6. FORMATTING:
+      - Keep the pseudocode readable and focused on movement logic
+      - Use plain English descriptions of movement patterns
+      - Be specific about how poison sensor readings influence movement
+
+      7. EXAMPLES:
+      - "If food is detected to the left (item 0 of food-observations > 0) and no poison is there (item 0 of poison-observations = 0), turn left and move forward. Otherwise, if food is detected to the right with no poison, turn right and move forward. Otherwise, explore randomly."
+
+      Present your evolved pseudocode enclosed in triple backticks. You may include comments in the pseudocode detailing your strategy. Do not include any explanations outside the code block:
+
+      ```
+      [Your evolved pseudocode here]
+      ```
+    code_prompt: |
+      You are an expert NetLogo programmer tasked with converting pseudocode into valid, executable NetLogo code.
+      Your goal is to faithfully implement the pseudocode while ensuring the code adheres to NetLogo syntax and execution constraints.
+
+      PSEUDOCODE TO TRANSLATE:
+      ```
+      {pseudocode}
+      ```
+
+      TRANSLATION REQUIREMENTS:
+
+      1. UNDERSTANDING THE PSEUDOCODE:
+      - Focus on understanding the FUNCTIONALITY described in the pseudocode
+      - DO NOT use variable names from the pseudocode directly in your NetLogo code
+      - Translate conceptual descriptions into valid NetLogo syntax
+      - The pseudocode is a guideline for behavior, not a direct translation template
+
+      2. CONSTRAINTS:
+      - Do not include code to kill or control any other agents
+      - Do not include code to interact with the environment
+      - Do not include code to change the environment
+      - Do not include code to create new agents
+      - Do not include code to create new poison sources
+      - Do not include code to change the rules of the simulation
+      - Follow NetLogo syntax and constraints
+      - Do not use any undefined variables or commands besides the food-observations and poison-observations variables
+      - Focus on movement strategies based on the food-observations and poison-observations variables
+
+      3. VALID COMMANDS AND SYNTAX:
+      - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+      - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+      - The syntax of the if primitive is as follows: if boolean [ commands ]
+      - The syntax of the ifelse primitive is as follows: ifelse boolean [ commands1 ] [ commands2 ]
+      - An ifelse block that contains multiple boolean conditions must be enclosed in parentheses as follows:
+      (ifelse boolean1 [ commands1 ] boolean2 [ commands2 ] ... [ elsecommands ])
+
+      4. COMPLEXITY IMPLEMENTATION:
+      - Accurately implement all described movement patterns
+      - Translate conditional logic to ifelse statements with proper brackets
+      - Implement sensor-responsive behavior using the "food-observations" and "poison-observations" lists only
+      - Do not use any variables other than "food-observations" and "poison-observations" in your code
+      - Convert multi-stage movements into appropriate command sequences
+
+      5. ABSOLUTELY FORBIDDEN:
+      - DO NOT use the "of" primitive/reporter - this will cause errors
+      - DO NOT use any non-existent or undefined variables
+      - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+      - DO NOT use "set", "let", or create any variables
+      - DO NOT include any infinite loops - avoid "while" or "loop" constructs
+      - DO NOT copy variable names from pseudocode and do not use any variables other than "food-observations" and "poison-observations"
+      - Strictly adhere to using ONLY the provided 'food-observations' and 'poison-observations' variables. Do not invent new ones.
+
+      6. ALLOWED STRUCTURE:
+      - You may use "if/ifelse" statements with item checks on the "food-observations" and "poison-observations" lists
+      - For complex or nested conditions, ensure proper bracket nesting and balance
+      - Make sure every opening bracket '[' has a matching closing bracket ']'
+      - Remember "food-observations" and "poison-observations" are the only valid variables you can reference
+
+      7. ERROR PREVENTION:
+      - Ensure each condition has both true and false branches in ifelse statements
+      - Verify that each command has a valid parameter
+      - Make sure bracket pairs are properly matched and nested
+      - Keep all numeric values between -1000 and 1000
+
+      8. EXAMPLES:
+      - If the given pseudocode says "If food is detected to the left (item 0 of food-observations > 0) and no poison is there (item 0 of poison-observations = 0), turn left and move forward. Otherwise, if food is detected to the right with no poison, turn right and move forward. Otherwise, explore randomly.", you should implement this logic in NetLogo code as follows:
+      ```
+      ifelse (item 0 food-observations > 0) and (item 0 poison-observations = 0) [
+        lt 10 fd 1
+      ] [
+        ifelse (item 1 food-observations > 0) and (item 1 poison-observations = 0) [
+          rt 10 fd 1
+        ] [
+          fd 1 rt random 20
+        ]
+      ]
+      ```
+
+      9. ROBUST IMPLEMENTATION:
+      - Generate code that is resilient to edge cases
+      - If pseudocode mentions a variable that doesn't exist in NetLogo (like 'food_left' or 'poison_ahead'), translate its purpose using `food-observations` or `poison-observations` (e.g., `item 0 food-observations > 0` or `item 2 poison-observations > 0`) without using the non-existent variable name.
+      - Focus on capturing the intent and behavior, not the exact syntax
+
+      Your task is to carefully analyze the provided pseudocode and translate it into well-formed NetLogo code that represents the described movement strategy.
+      The code must be runnable in NetLogo in the context of a turtle. Do not write any procedures and assume that the code will be run in an ask turtles block.
+      Return ONLY the changed NetLogo code. Do not include any explanations or outside the code block.
+
+      Present your generated NetLogo code enclosed in triple backticks:
+
+      ```
+      [Your generated NetLogo code here]
+      ```
+  collection_poison_avoidance_two_shot:
+    pseudocode_prompt: |
+      You are an expert NetLogo pseudocode creator specializing in complex turtle agent movement.
+      You are trying to improve the given pseudocode of a given turtle agent that is trying to avoid poison sources.
+
+      Here is the current pseudocode of the turtle agent:
+      ```
+      {current_pseudocode}
+      ```
+
+      Improve the given agent movement pseudocode following these precise specifications:
+
+      INPUT CONTEXT:
+      - The agent has access to two variables containing information about its environment:
+        - food-observations is a list that contains three elements representing distances to food in three cone regions of 20 degrees each.
+        - poison-observations is a list that contains three elements representing distances to poison in three cone regions of 20 degrees each.
+      - The first item in these lists gives the distances to the nearest food or poison in the left cone, the second is the right cone, and the third is the front cone
+      - Each value encodes the distance to nearest food or poison source where a value of 0 indicates no food or poison
+      - Non-zero lower values indicate closer to food or poison
+      - Use these to inform movement strategy
+
+      SIMULATION ENVIRONMENT:
+      - The turtle agent is in a food collection simulation
+      - Poison decreases the turtle's energy.
+      - The goal is to collect as much food as possible while avoiding poison.
+      - The turtle agent can detect food in three cone regions encoded in the input list
+      - The food sources are randomly distributed in the environment
+
+      EVOLUTIONARY ADVANCEMENT OBJECTIVES:
+
+      1. PROGRESSIVE COMPLEXITY ENHANCEMENT:
+      - Build upon the existing pseudocode's core logic
+      - Add advanced movement concepts for poison detection and avoidance
+      - Incorporate more sophisticated decision-making based on poison sensor inputs
+
+      2. INNOVATION GUIDELINES:
+      - Introduce adaptive movement that responds to imminent poison threats
+      - Create multi-stage movement sequences that optimize escape routes
+      - Develop intelligent turning behaviors that maximize distance from poison
+      - Implement energy-efficient movement strategies that minimize exposure
+      - Consider emergent evasion behaviors
+
+      3. VALID MOVEMENT CONCEPTS ONLY:
+      - "Move forward" (will become fd or forward in NetLogo)
+      - "Turn right" (will become rt or right in NetLogo)
+      - "Turn left" (will become lt or left in NetLogo)
+      - "Move backward" (will become bk or back in NetLogo)
+      - Conditional movements based on poison sensor readings (the "poison-observations" list)
+
+      4. ABSOLUTELY FORBIDDEN CONCEPTS:
+      - DO NOT include any reference to "of" relationships between agents
+      - DO NOT create or reference any variables that don't exist
+      - DO NOT ask other agents to perform actions
+      - DO NOT create or kill any agents
+      - DO NOT change the environment or any variables
+      - DO NOT use loops or recursive patterns
+
+      5. ALLOWED STRUCTURE:
+      - Do not use any variables other than "food-observations" and "poison-observations"
+      - You may include "if/else" logic based on the list values of "food-observations" and "poison-observations"
+      - You may combine multiple movement commands in sequence
+
+      6. FORMATTING:
+      - Keep the pseudocode readable and focused on movement logic
+      - Use plain English descriptions of movement patterns
+      - Be specific about how poison sensor readings influence movement
+
+      7. EXAMPLES:
+      - "If food is detected to the left (item 0 of food-observations > 0) and no poison is there (item 0 of poison-observations = 0), turn left and move forward. Otherwise, if food is detected to the right with no poison, turn right and move forward. Otherwise, explore randomly."
+      - "If poison is detected directly ahead and is close (item 2 of poison-observations > 0 and item 2 of poison-observations < 3), turn sharply right (90 degrees) and move forward. Otherwise, if food is ahead and safe (item 2 food-observations > 0 and item 2 poison-observations = 0), move forward quickly. Otherwise, check side sensors for food/poison and react, or explore."
+
+      Present your evolved pseudocode enclosed in triple backticks. You may include comments in the pseudocode detailing your strategy. Do not include any explanations outside the code block:
+
+      ```
+      [Your evolved pseudocode here]
+      ```
+    code_prompt: |
+      You are an expert NetLogo programmer tasked with converting pseudocode into valid, executable NetLogo code.
+      Your goal is to faithfully implement the pseudocode while ensuring the code adheres to NetLogo syntax and execution constraints.
+
+      PSEUDOCODE TO TRANSLATE:
+      ```
+      {pseudocode}
+      ```
+
+      TRANSLATION REQUIREMENTS:
+
+      1. UNDERSTANDING THE PSEUDOCODE:
+      - Focus on understanding the FUNCTIONALITY described in the pseudocode
+      - DO NOT use variable names from the pseudocode directly in your NetLogo code
+      - Translate conceptual descriptions into valid NetLogo syntax
+      - The pseudocode is a guideline for behavior, not a direct translation template
+
+      2. CONSTRAINTS:
+      - Do not include code to kill or control any other agents
+      - Do not include code to interact with the environment
+      - Do not include code to change the environment
+      - Do not include code to create new agents
+      - Do not include code to create new poison sources
+      - Do not include code to change the rules of the simulation
+      - Follow NetLogo syntax and constraints
+      - Do not use any undefined variables or commands besides the food-observations and poison-observations variables
+      - Focus on movement strategies based on the food-observations and poison-observations variables
+
+      3. VALID COMMANDS AND SYNTAX:
+      - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+      - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+      - The syntax of the if primitive is as follows: if boolean [ commands ]
+      - The syntax of the ifelse primitive is as follows: ifelse boolean [ commands1 ] [ commands2 ]
+      - An ifelse block that contains multiple boolean conditions must be enclosed in parentheses as follows:
+      (ifelse boolean1 [ commands1 ] boolean2 [ commands2 ] ... [ elsecommands ])
+
+      4. COMPLEXITY IMPLEMENTATION:
+      - Accurately implement all described movement patterns
+      - Translate conditional logic to ifelse statements with proper brackets
+      - Implement sensor-responsive behavior using the "food-observations" and "poison-observations" lists only
+      - Do not use any variables other than "food-observations" and "poison-observations" in your code
+      - Convert multi-stage movements into appropriate command sequences
+
+      5. ABSOLUTELY FORBIDDEN:
+      - DO NOT use the "of" primitive/reporter - this will cause errors
+      - DO NOT use any non-existent or undefined variables
+      - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+      - DO NOT use "set", "let", or create any variables
+      - DO NOT include any infinite loops - avoid "while" or "loop" constructs
+      - DO NOT copy variable names from pseudocode and do not use any variables other than "food-observations" and "poison-observations"
+      - Strictly adhere to using ONLY the provided 'food-observations' and 'poison-observations' variables. Do not invent new ones.
+
+      6. ALLOWED STRUCTURE:
+      - You may use "if/ifelse" statements with item checks on the "food-observations" and "poison-observations" lists
+      - For complex or nested conditions, ensure proper bracket nesting and balance
+      - Make sure every opening bracket '[' has a matching closing bracket ']'
+      - Remember "food-observations" and "poison-observations" are the only valid variables you can reference
+
+      7. ERROR PREVENTION:
+      - Ensure each condition has both true and false branches in ifelse statements
+      - Verify that each command has a valid parameter
+      - Make sure bracket pairs are properly matched and nested
+      - Keep all numeric values between -1000 and 1000
+
+      8. EXAMPLES:
+      - If the given pseudocode says "If food is detected to the left (item 0 of food-observations > 0) and no poison is there (item 0 of poison-observations = 0), turn left and move forward. Otherwise, if food is detected to the right with no poison, turn right and move forward. Otherwise, explore randomly.", you should implement this logic in NetLogo code as follows:
+      ```
+      ifelse (item 0 food-observations > 0) and (item 0 poison-observations = 0) [
+        lt 10 fd 1
+      ] [
+        ifelse (item 1 food-observations > 0) and (item 1 poison-observations = 0) [
+          rt 10 fd 1
+        ] [
+          fd 1 rt random 20
+        ]
+      ]
+      ```
+      - If the given pseudocode says "If poison is detected directly ahead and is close (item 2 of poison-observations > 0 and item 2 of poison-observations < 3), turn sharply right (90 degrees) and move forward. Otherwise, if food is ahead and safe (item 2 food-observations > 0 and item 2 poison-observations = 0), move forward quickly. Otherwise, check side sensors for food/poison and react, or explore.", you could implement this logic in NetLogo code as follows:
+      ```
+      ifelse (item 2 poison-observations > 0) and (item 2 poison-observations < 3) [ ;; Poison ahead and close?
+        rt 90 fd 1 ;; Turn sharply away
+      ] [
+        ifelse (item 2 food-observations > 0) and (item 2 poison-observations = 0) [ ;; Food ahead and safe?
+          fd 1.5 ;; Go get it
+        ] [
+          ifelse (item 0 poison-observations > 0) and (item 0 poison-observations < 3) [ ;; Poison left and close?
+            rt 45 fd 1 ;; Turn away
+          ] [
+            ifelse (item 1 poison-observations > 0) and (item 1 poison-observations < 3) [ ;; Poison right and close?
+              lt 45 fd 1 ;; Turn away
+            ] [
+              ifelse (item 0 food-observations > 0) and (item 0 poison-observations = 0) [ ;; Food left and safe?
+                lt 15 fd 0.8 ;; Turn towards it
+              ] [
+                ifelse (item 1 food-observations > 0) and (item 1 poison-observations = 0) [ ;; Food right and safe?
+                  rt 15 fd 0.8 ;; Turn towards it
+                ] [
+                  fd 0.5 rt random 30 ;; Explore
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+      ```
+
+      9. ROBUST IMPLEMENTATION:
+      - Generate code that is resilient to edge cases
+      - If pseudocode mentions a variable that doesn't exist in NetLogo (like 'food_left' or 'poison_ahead'), translate its purpose using `food-observations` or `poison-observations` (e.g., `item 0 food-observations > 0` or `item 2 poison-observations > 0`) without using the non-existent variable name.
+      - Focus on capturing the intent and behavior, not the exact syntax
+
+      Your task is to carefully analyze the provided pseudocode and translate it into well-formed NetLogo code that represents the described movement strategy.
+      The code must be runnable in NetLogo in the context of a turtle. Do not write any procedures and assume that the code will be run in an ask turtles block.
+      Return ONLY the changed NetLogo code. Do not include any explanations or outside the code block.
+
+      Present your generated NetLogo code enclosed in triple backticks:
+
+      ```
+      [Your generated NetLogo code here]
+      ```

@@ -1,0 +1,115 @@
+name: retry_prompts
+value:
+  generate_code_with_error: |
+    You are an expert NetLogo coder tasked with fixing a movement code error for a turtle agent. Your goal is to update the provided NetLogo movement code to fix the error message shown below.
+
+    Here is the current rule:
+    {original_code}
+
+    Here is the error message:
+    {error_message}
+
+    STRICT GUIDELINES FOR FIXING THE CODE:
+
+    1. VALID COMMANDS ONLY:
+        - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+        - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+
+    2. ABSOLUTELY FORBIDDEN:
+        - DO NOT use the "of" primitive/reporter - this will always cause errors
+        - DO NOT use any non-existent or undefined variables
+        - DO NOT use "ask", "with", "turtles", "patches" - these are not allowed
+        - DO NOT use "set", "let", or create any variables
+        - DO NOT use loops or recursion - these create infinite loops
+
+    3. ALLOWED STRUCTURE:
+        - You may use "if/ifelse" statements with item checks on the "input" list
+        - Basic example: ifelse item 0 input != 0 [fd 1] [rt 90 fd 2]
+        - For complex or nested conditions, maintain proper bracket balance
+
+    4. FORMATTING:
+        - Each command (fd/rt/lt) must be followed by a number or simple expression
+        - All commands must be properly separated by spaces
+        - Keep the code simple, focused only on movement
+        - Ensure all brackets are properly paired and balanced
+
+    5. ERROR-SPECIFIC FIXES:
+        - For "Dangerous primitives" errors: Remove ALL prohibited commands
+        - For "Unclosed brackets" errors: Check and fix ALL bracket pairs
+        - For "Invalid value" errors: Ensure all numeric values are valid and positive
+        - For "No movement commands" errors: Include at least one movement command (fd, rt, lt)
+        - For "Command needs a value" errors: Ensure every command has a parameter
+
+    Generate ONLY basic movement code that strictly avoids the error mentioned. The code must be runnable in NetLogo turtle context. Present your corrected NetLogo code enclosed in triple backticks:
+
+    ```
+    [Your corrected NetLogo code here]
+    ```
+
+    Do not include any explanations - the code itself should be the only output.
+  generate_code_with_pseudocode_and_error: |
+    You are an expert NetLogo programmer specializing in debugging and translating pseudocode for turtle agent movement. Your task is to **fix the provided NetLogo code based on the given error message, while strictly adhering to the logic described in the accompanying pseudocode.**
+
+    **Code with Error:**
+    ```netlogo
+    {original_code}
+    ```
+
+    **Error Message:**
+    ```
+    {error_message}
+    ```
+
+    **Guiding Pseudocode:**
+    ```pseudocode
+    {pseudocode}
+    ```
+
+    **STRICT GUIDELINES FOR CODE CORRECTION & TRANSLATION:**
+
+    1.  **Prioritize Error Correction:** Address the specific error indicated in the error message directly.
+    2.  **Adhere to Pseudocode Logic:** Ensure the corrected code accurately implements the movement strategy described in the pseudocode. Translate the pseudocode's intent faithfully.
+    3.  **Valid Commands & Reporters ONLY:**
+        *   Movement: `fd`, `forward`, `rt`, `right`, `lt`, `left`, `bk`, `back`.
+        *   Reporters: `random`, `random-float`, `sin`, `cos`, `item`, `xcor`, `ycor`, `heading`.
+        *   Use `item index list_name` to access elements (e.g., `item 0 input`).
+
+    4.  **Strict Variable Usage:**
+        *   Assume the agent only has access to the standard `input` list variable unless the pseudocode explicitly mentions other allowed variables like `food-observations` or `poison-observations`.
+        *   DO NOT invent, `set`, or `let` any variables not explicitly allowed or provided in the context.
+
+    5.  **Absolutely Forbidden:**
+        *   `of` primitive/reporter.
+        *   `ask`, `with`, `turtles`, `patches`.
+        *   `set`, `let` (unless part of the original, non-erroneous code structure being preserved).
+        *   Infinite loops (`while`, `loop`).
+        *   Using undefined variables or primitives.
+
+    6.  **Allowed Structure:**
+        *   `if/ifelse` statements based on checks of allowed variables (e.g., `item 0 input > 0`).
+        *   Ensure correct bracket `[ ]` nesting and balance. Max nesting depth: 3.
+        *   Multi-condition `ifelse`: Use parentheses `(ifelse condition1 [ cmds1 ] ... [ else_cmds ])`.
+
+    7.  **Formatting & Syntax:**
+        *   Commands require parameters (e.g., `fd 1`, `rt random 30`).
+        *   Proper spacing between commands and parameters.
+        *   Keep code focused on movement logic.
+        *   Ensure all brackets `[ ]` are paired.
+
+    8.  **Error-Specific Fixes (Examples):**
+        *   "Dangerous primitives": Remove forbidden commands (`ask`, `of`, `set`, etc.).
+        *   "Unclosed brackets": Find and fix mismatched `[` or `]`.
+        *   "Expected a literal value": Ensure commands have required numeric/reporter inputs.
+        *   "Nothing named ... has been defined": Remove references to undefined variables/procedures. Check spelling.
+        *   "Command needs input": Add the missing parameter to the command.
+
+    **TASK:**
+    Generate corrected NetLogo code that both resolves the specific error message AND implements the logic from the provided pseudocode. The code must be runnable in a NetLogo turtle context.
+
+    Present ONLY the corrected NetLogo code enclosed in triple backticks:
+
+    ```netlogo
+    [Your corrected NetLogo code here]
+    ```
+
+    Do not include any explanations outside the code block.

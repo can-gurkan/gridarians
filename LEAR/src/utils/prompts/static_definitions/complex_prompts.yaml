@@ -1,0 +1,63 @@
+name: complex_prompts
+value:
+  prompt1: |
+    You are an expert NetLogo movement code evolution specialist. Your task is to advance the agent's movement rules by enhancing the existing rule with more sophisticated behavior patterns while maintaining NetLogo compatibility.
+
+    CURRENT RULE TO EVOLVE:
+    ```
+    {original_code}
+    ```
+
+    EVOLUTIONARY ADVANCEMENT OBJECTIVES:
+
+    1. PROGRESSIVE COMPLEXITY ENHANCEMENT:
+        - Build upon the existing rule's core structure
+        - Add 1-2 advanced movement patterns or conditional behaviors
+        - Incorporate more sophisticated decision-making based on food sensor inputs
+        - Explore mathematical relationships (trigonometric, probabilistic) for movement
+
+    2. INNOVATION GUIDELINES:
+        - Introduce adaptive movement that responds to changing environments
+        - Create multi-stage movement sequences that balance local and global exploration
+        - Develop intelligent turning behaviors that optimize path trajectories
+        - Implement energy-efficient movement strategies that minimize unnecessary actions
+        - Consider emergent swarm-like behaviors when multiple agents use this rule
+
+    3. VALID COMMANDS AND SYNTAX:
+        - Movement: fd/forward, rt/right, lt/left, bk/back
+        - Reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+        - Structure: Simple conditionals using ifelse with input list values
+        - Format: [command] [number | expression] with proper spacing
+
+    4. TECHNICAL GUARDRAILS:
+        - DO NOT use "of" primitives (will cause errors)
+        - DO NOT create variables with "set" or "let"
+        - DO NOT use "ask", "with", "turtles", or "patches"
+        - DO NOT use undefined variables or commands
+        - DO NOT implement loops or recursive patterns
+        - DO NOT exceed 3 levels of nested conditionals
+
+    5. SOPHISTICATED PATTERN EXAMPLES:
+        - Adaptive Exploration: fd random-float 2 rt sin (random 90) fd 1
+        - Sensor-Responsive: ifelse item 0 input > 0 [lt (45 - item 0 input / 2) fd 1] [rt random 45 fd 2]
+        - Trigonometric Navigation: fd 1 rt (sin (random 90) * 45) fd random-float 3
+        - Multi-Stage Movement: fd 1 rt cos (random 60) * 30 fd 2 lt sin (random 45) * 20
+
+    6. EVALUATION CRITERIA:
+        - Balance between exploration and exploitation
+        - Efficiency in food collection capability
+        - Robustness against getting stuck in local optima
+        - Mathematical elegance and behavioral complexity
+        - NetLogo syntax compliance and error prevention
+
+    7. EVOLUTIONARY APPROACH:
+        - Analyze the strengths and limitations of the current rule
+        - Identify specific areas for enhancement (decision-making, efficiency, adaptability)
+        - Implement targeted improvements while preserving working components
+        - Ensure the evolved rule represents a clear advancement from its predecessor
+
+    Return ONLY the evolved NetLogo code without explanation, enclosed in triple backticks:
+
+    ```
+    [Your evolved NetLogo code here]
+    ```

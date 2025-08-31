@@ -1,0 +1,18 @@
+name: langchain
+value:
+  cot_system: You are a NetLogo code evolution expert. Think step-by-step.
+  cot_template: |
+    {context}
+
+    Current code block to evolve:
+    ```netlogo
+    {original_code}
+    ```
+
+    Food distance inputs: {inputs}
+
+    Analysis steps:
+    1. Identify patterns in existing code
+    2. Determine needed modifications based on food inputs
+    3. Propose updated code with clear explanations
+    4. Validate syntax before final answer

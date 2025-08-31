@@ -1,0 +1,64 @@
+to setup-logger [additional-params]
+  let init-params (list
+    (list "llm-type" llm-type)
+    (list "num-llm-agents" num-llm-agents)
+    (list "ticks-per-generation" ticks-per-generation)
+    (list "selection" selection)
+    (list "num-parents" num-parents)
+    (list "tournament-size" tournament-size)
+    (list "selection-pressure" selection-pressure)
+  )
+  set init-params sentence init-params additional-params
+  py:set "init_params" init-params
+  py:run "from src.mutation.mutate_code import get_graph_provider"
+  py:run "from src.utils.storeprompts import prompts"
+
+  py:set "llm_type" llm-type
+  py:set "prompt_type" py:runresult "get_graph_provider(llm_type).prompt_type"
+  py:set "prompt_name" py:runresult "get_graph_provider(llm_type).prompt_name"
+  
+  let base-prompt py:runresult "prompts[prompt_type][prompt_name]"
+  py:set "base_prompt" base-prompt
+
+  ;; Initialize a new logger instance (ensures new log file per setup)
+  py:set "experiment_name" experiment-name
+  py:run "from src.utils.sim_logger import initialize_logger"
+  py:run "logger = initialize_logger(experiment_name)"
+
+  ;; Log the simulation parameters
+  py:run "logger.log_initial_parameters(init_params)"
+  py:run "logger.log_base_prompt(base_prompt)"
+end
+
+;; Constructs agent table (dict) for logging
+to-report agent-dict [agentset]
+  let superdict table:make
+  let agentlist map [agent -> [(list who fitness parent-id parent-rule rule pseudocode parent-pseudocode)] of agent] reverse sort-on [fitness] agentset
+  let keys ["id" "fitness" "parent-id" "parent-rule" "rule" "pseudocode" "parent-pseudocode"]
+  let kvlist map [vals -> fp:zip keys vals ] agentlist
+
+  foreach kvlist [ lst ->
+    let subdict table:from-list lst
+    table:put superdict (word "agent " item 1 item 0 lst) subdict
+  ]
+  report superdict
+end
+
+;; Metric logging helper
+to log-metrics [agentdicts]
+  if logging?[
+    let metrics get-generation-metrics
+
+    let agentset-dict table:make
+    let keys ["mutated agents" "new agents" "killed agents"]
+    foreach range 3 [ i -> table:put agentset-dict item i keys item i agentdicts]
+
+    py:set "metrics" metrics
+    py:set "agent_dict" table:to-json agentset-dict
+
+    ;; Log generation results using the same logger instance
+    py:run "from src.utils.sim_logger import get_logger"
+    py:run "logger = get_logger()"
+    py:run "logger.log_generation([dict(metrics), agent_dict])"
+  ]
+end
