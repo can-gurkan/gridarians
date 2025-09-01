@@ -1,4 +1,4 @@
-extensions[cgp fp palette math csv]
+extensions[cgp fp palette math csv py]
 
 globals [
   grid-size
@@ -36,6 +36,12 @@ globals [
   body-lvlsback
 
   generations
+
+  ;; llm
+  generation-stats
+  best-rules
+  best-rule-fitness
+  error-log
 ]
 
 breed[gridarians gridarian]
@@ -45,6 +51,17 @@ breed[balls ball]
 
 gridarians-own[
   my-score
+
+  ;; llm additions
+  ;input ;; observation vector
+  body-rule ;; current rule (llm-generated)
+  brain-rule
+  ;energy ;; current score
+  ;lifetime ;; age of the agent (in generations)
+  ;food-collected  ;; total food agent gathered
+  parent-id ;; who number of parent
+  parent-body-rule ;; parent rule
+  parent-brain-rule
 ]
 
 cells-own [
@@ -101,6 +118,7 @@ to setup
   init-params
   resize-grid grid-size
   ;init-custom-robot
+  setup-python ;; llm
   init-bodies init-num-agents 0
   setup-random-walls
   setup-random-balls
@@ -111,6 +129,16 @@ end
 to resize-grid [n]
   resize-world (-1 * n) n (-1 * n) n
   set-patch-size (11.5 * 50) / (2 * n)
+end
+
+to setup-python
+  ;; llm
+  py:setup py:python
+  py:run "import os"
+  py:run "import sys"
+  py:run "from pathlib import Path"
+  ;py:run "sys.path.append(os.path.dirname(os.path.abspath('..')))"
+  py:run "from LEAR.src.mutation.mutate_code import mutate_code"
 end
 
 to setup-box-walls
@@ -166,6 +194,62 @@ to init-custom-robot
     ]
     ;embody
   ]
+end
+
+to init-body-from-list [lst pos]
+  ;; llm
+  create-gridarians 1 [
+    ;let seed-patch one-of patches with [count turtles-here = 0]
+    let seed-patch patch (item 0 pos) (item 1 pos)
+    set my-score 0
+    move-to seed-patch
+    set heading 0
+    set color white
+    set shape "dot"
+    hatch-cells 1 [
+      set id [who] of myself
+      set cell-type 1
+      set direction 0
+      set health 1
+      set shape "dot"
+      create-link-from myself [tie hide-link]
+      update-cell-symbol
+    ]
+    foreach lst [ tuple ->
+      let loc patch (item 0 tuple) (item 1 tuple)
+      if [available?] of loc [
+        hatch-cells 1 [
+          move-to loc
+          set id [who] of myself
+          create-link-from myself [tie hide-link]
+          set cell-type item 2 tuple
+          let dir item 3 tuple
+          if cell-type = 2 [
+            set direction item dir [0 90 180 270]
+            set shape "arrow2"
+          ]
+          if cell-type = 3 [
+            set direction item dir [90 270]
+            ifelse direction = 90 [set shape "clock-wise"][set shape "counter-clock-wise"]
+          ]
+          if cell-type = 4 [
+            set direction item dir [0 90 180 270]
+            set shape "T"
+          ]
+          if cell-type = 5 [
+            set direction 0
+            set shape "square3"
+          ]
+          if cell-type = 6 [
+            set direction 0
+            set shape "x"
+          ]
+          set heading direction
+        ]
+      ]
+    ]
+  ]
+  visualize-cells
 end
 
 to init-bodies [num parent]
@@ -448,7 +532,7 @@ end
 
 to go
   ask gridarians [
-    repeat num-updates [update-body false]
+    ;repeat num-updates [update-body false]
     sense
     interact
     ;move-random
@@ -890,8 +974,8 @@ end
 GRAPHICS-WINDOW
 285
 10
-874
-600
+877
+603
 -1
 -1
 9.583333333333334
@@ -1012,7 +1096,7 @@ init-num-agents
 init-num-agents
 0
 100
-10.0
+5.0
 1
 1
 NIL
@@ -1501,7 +1585,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.3.0
+NetLogo 6.4.0
 @#$#@#$#@
 setup-random repeat 20 [ go ]
 @#$#@#$#@

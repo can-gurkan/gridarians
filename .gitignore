@@ -1,3 +1,5 @@
 .DS_Store
 exports/
 *.tmp.nlogo
+.env
+cgp/cgp-old.jar

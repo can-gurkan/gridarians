@@ -20,8 +20,8 @@ aiosignal==1.3.2
 annotated-types==0.7.0
     # via pydantic
 anthropic==0.45.2
+    # via gridarians
     # via langchain-anthropic
-    # via lear
 anyio==4.8.0
     # via anthropic
     # via groq
@@ -53,20 +53,20 @@ frozenlist==1.5.0
     # via aiohttp
     # via aiosignal
 gin-config==0.5.0
-    # via lear
+    # via gridarians
 groq==0.12.0
+    # via gridarians
     # via langchain-groq
-    # via lear
 h11==0.14.0
     # via httpcore
 httpcore==1.0.7
     # via httpx
 httpx==0.27.2
     # via anthropic
+    # via gridarians
     # via groq
     # via langgraph-sdk
     # via langsmith
-    # via lear
     # via openai
 idna==3.10
     # via anyio
@@ -74,7 +74,7 @@ idna==3.10
     # via requests
     # via yarl
 instructor==1.6.4
-    # via lear
+    # via gridarians
 jinja2==3.1.5
     # via instructor
 jiter==0.6.1
@@ -88,10 +88,11 @@ jsonpointer==3.0.0
 kiwisolver==1.4.8
     # via matplotlib
 langchain==0.3.18
-    # via lear
+    # via gridarians
 langchain-anthropic==0.3.7
-    # via lear
+    # via gridarians
 langchain-core==0.3.35
+    # via gridarians
     # via langchain
     # via langchain-anthropic
     # via langchain-deepseek
@@ -101,17 +102,16 @@ langchain-core==0.3.35
     # via langgraph
     # via langgraph-checkpoint
     # via langgraph-prebuilt
-    # via lear
 langchain-deepseek==0.1.2
-    # via lear
+    # via gridarians
 langchain-groq==0.2.4
-    # via lear
+    # via gridarians
 langchain-openai==0.3.6
     # via langchain-deepseek
 langchain-text-splitters==0.3.6
     # via langchain
 langgraph==0.3.18
-    # via lear
+    # via gridarians
 langgraph-checkpoint==2.0.21
     # via langgraph
     # via langgraph-prebuilt
@@ -151,7 +151,7 @@ packaging==24.2
     # via langchain-core
     # via matplotlib
 pandas==2.2.3
-    # via lear
+    # via gridarians
     # via seaborn
 pillow==11.1.0
     # via matplotlib
@@ -160,13 +160,13 @@ propcache==0.2.1
     # via yarl
 pydantic==2.10.6
     # via anthropic
+    # via gridarians
     # via groq
     # via instructor
     # via langchain
     # via langchain-anthropic
     # via langchain-core
     # via langsmith
-    # via lear
     # via openai
 pydantic-core==2.27.2
     # via instructor
@@ -179,13 +179,13 @@ python-dateutil==2.9.0.post0
     # via matplotlib
     # via pandas
 python-dotenv==1.0.1
-    # via lear
+    # via gridarians
 pytz==2025.1
     # via pandas
 pyyaml==6.0.2
+    # via gridarians
     # via langchain
     # via langchain-core
-    # via lear
 regex==2024.11.6
     # via tiktoken
 requests==2.32.3
@@ -200,9 +200,9 @@ rich==13.9.4
     # via instructor
     # via typer
 seaborn==0.13.2
-    # via lear
+    # via gridarians
 setuptools==59.5.0
-    # via lear
+    # via gridarians
 shellingham==1.5.4
     # via typer
 six==1.17.0
