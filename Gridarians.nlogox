@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<model version="NetLogo 7.0.0-beta2" snapToGrid="true">
-  <code><![CDATA[extensions[cgp fp palette csv py]
+<model version="NetLogo 7.0.0-RC1" snapToGrid="true">
+  <code><![CDATA[extensions[cgp fp palette csv py rnd]
+
+__includes["evolution-llm.nls"]
 
 globals [
   grid-size
@@ -37,13 +39,21 @@ globals [
   num-body-rows
   body-lvlsback
 
-  generations
+  generation
 
   ;; llm
   generation-stats
   best-rules
   best-rule-fitness
   error-log
+  
+  selection
+  num-parents
+  tournament-size
+  selection-pressure
+  
+  max-num-cells
+  body-mutation-prob
 ]
 
 breed[gridarians gridarian]
@@ -55,15 +65,15 @@ gridarians-own[
   my-score
 
   ;; llm additions
-  ;input ;; observation vector
-  body-rule ;; current rule (llm-generated)
-  brain-rule
+  input ;; observation vector
+  cfg
+  rule ;; current rule (llm-generated)
   ;energy ;; current score
   ;lifetime ;; age of the agent (in generations)
   ;food-collected  ;; total food agent gathered
   parent-id ;; who number of parent
-  parent-body-rule ;; parent rule
-  parent-brain-rule
+  parent-cfg ;; parent rule
+  parent-rule
 ]
 
 cells-own [
@@ -75,12 +85,13 @@ cells-own [
 ]
 
 to init-params
-  set-topology false false
+  ;set-topology false false
+  set-topology true true
   set grid-size 30
   set available-cell-types [2 3 4 5 6]
-  set num-balls 10
+  set num-balls 30
   set num-walls 10
-  set sensing-distance 3
+  set sensing-distance 30
 
   set ticks-per-gen 1000
   set mutation-rate 0.2
@@ -112,7 +123,16 @@ to init-params
   set num-body-rows 3
   set body-lvlsback 2
 
-  set generations 0
+  set generation 0
+  
+  ;; llm selection algo params
+  set selection "tournament"
+  set num-parents 1
+  set tournament-size init-num-agents
+  set selection-pressure 0.8
+  
+  set max-num-cells 15
+  set body-mutation-prob 0.5
 end
 
 to setup
@@ -121,7 +141,9 @@ to setup
   resize-grid grid-size
   ;init-custom-robot
   setup-python ;; llm
-  init-bodies init-num-agents 0
+  ;init-bodies init-num-agents 0
+  init-bodies-llm init-num-agents
+  ask gridarians [init-rules]
   setup-random-walls
   setup-random-balls
   visualize-cells
@@ -141,6 +163,7 @@ to setup-python
   py:run "from pathlib import Path"
   ;py:run "sys.path.append(os.path.dirname(os.path.abspath('..')))"
   py:run "from LEAR.src.mutation.mutate_code import mutate_code"
+  py:run "from utils import *"
 end
 
 to setup-box-walls
@@ -204,7 +227,16 @@ to init-body-from-list [lst pos]
     ;let seed-patch one-of patches with [count turtles-here = 0]
     let seed-patch patch (item 0 pos) (item 1 pos)
     set my-score 0
-    move-to seed-patch
+    set cfg lst
+    if [available?] of seed-patch [
+      move-to seed-patch
+    ]
+    init-body lst
+  ]
+  ;visualize-cells
+end
+
+to init-body [lst]
     set heading 0
     set color white
     set shape "dot"
@@ -218,7 +250,7 @@ to init-body-from-list [lst pos]
       update-cell-symbol
     ]
     foreach lst [ tuple ->
-      let loc patch (item 0 tuple) (item 1 tuple)
+      let loc patch-at (item 0 tuple) (item 1 tuple)
       if [available?] of loc [
         hatch-cells 1 [
           move-to loc
@@ -250,8 +282,50 @@ to init-body-from-list [lst pos]
         ]
       ]
     ]
+end
+
+to-report get-init-pos [bodycfg try]
+  let max-tries 20
+  if try > max-tries [report "Error: no available positions"]
+  let flag true
+  let pos one-of patches with [available?]
+  py:set "cfg" bodycfg
+  let poslst py:runresult "get_positions(cfg)"
+  ask pos [
+    foreach poslst [ cor -> 
+      let p patch-at (item 0 cor) (item 1 cor) 
+      if p = nobody or not [available?] of p [
+        set flag false 
+      ]
+    ]
   ]
-  visualize-cells
+  ifelse flag [
+    report [list pxcor pycor] of pos
+  ] [
+    report get-init-pos bodycfg (try + 1)
+  ]
+end
+
+to init-bodies-llm [num]
+  py:set "mnp" max-num-cells
+  py:run "prompt = read_prompt('init_body_v1', {'MAX_NUM_PARTS': mnp})"
+  repeat num [
+    ;let bodycfg py:runresult "get_robot_configuration(prompt)"
+    let bodycfg py:runresult "init_robot(mnp)"
+    print bodycfg
+    ;let pos [list pxcor pycor] of one-of patches with [available?]
+    let pos get-init-pos bodycfg 0
+    print pos 
+    init-body-from-list bodycfg pos
+  ]
+end
+
+to init-rules
+  ;; agent context
+  py:set "cfg" cfg
+  py:set "sensing_dist" sensing-distance
+  set rule py:runresult "init_rule(cfg, sensing_dist)"
+  ;print rule
 end
 
 to init-bodies [num parent]
@@ -503,8 +577,8 @@ to-report available?
 end
 
 to visualize-cells
-  ;let color-list [blue green red yellow cyan magenta brown orange lime sky pink]
-  let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
+  let color-list [red green blue yellow cyan magenta brown orange lime sky pink]
+  ;let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
   ask patches [
     set pcolor black
     if count cells-here = 1 and check-overlap [
@@ -519,8 +593,11 @@ to visualize-cells
           [set pcolor black])
         ]
         cell-visualization = "by-agent" [
-          let cid [id] of c mod (count gridarians) ;change later
+          ;let cid [id] of c mod (count gridarians) ;change later
+          let cid [id] of c mod length color-list
           set pcolor item cid color-list
+          ;let nc (ifelse-value (count gridarians) < 3 [3] (count gridarians) > 7 [7] [count gridarians])
+          ;set pcolor palette:scale-scheme "Qualitative" "Set1" nc cid 0 (count gridarians)
       ])
     ]
   ]
@@ -536,19 +613,22 @@ to go
   ask gridarians [
     ;repeat num-updates [update-body false]
     sense
-    interact
+    ;interact
     ;move-random
     ;move-morph-limited
-    move-morph
+    ;move-morph
+    move-llm
+    interact
   ]
-  evolve
+  ;evolve
+  evolve-llm
   replenish-balls
   visualize-cells
   tick
 end
 
 to sense
-  let obs get-observation-vector
+  set input get-observation-vector
 end
 
 to-report get-observation-vector
@@ -571,10 +651,10 @@ end
 to-report get-sensor-input
   let flag? true
   let dist 0
-  let input []
+  let inputlst []
   while [flag?][
     set dist dist + 1
-    set input list dist 0
+    set inputlst list dist 0
     ifelse patch-ahead dist != nobody [
       ask patch-ahead dist [
         if any? turtles-here [
@@ -588,18 +668,18 @@ to-report get-sensor-input
             any? walls-here [set i 3]
             any? balls-here [set i 4]
             [set i 5])
-          set input list dist i
+          set inputlst list dist i
           set flag? false
         ]
       ]
     ] [
-      set input list dist 3
+      set inputlst list dist 3
       ;print dist
       set flag? false
     ]
     if dist >= sensing-distance [set flag? false]
   ]
-  report input
+  report inputlst
 end
 
 to interact
@@ -614,6 +694,39 @@ to interact
       ]
     ]
     set my-score my-score + score
+  ]
+end
+
+to move-llm
+  py:set "rule" rule
+  py:run "exec(rule)"
+  py:set "input" input
+  ;print input
+  ;print rule
+  let actions []
+  carefully [
+    set actions py:runresult "move(input)"
+  ] [
+    print "rule eval error"
+  ]
+  ;print actions
+  py:set "actions" actions
+  py:set "cfg" cfg
+  let valid? py:runresult "check_actions(cfg, actions)"
+  ifelse valid? [
+    foreach actions [action ->
+      if action = "up" [change-pos 0]
+      if action = "down" [change-pos 180]
+      if action = "left" [change-pos 270]
+      if action = "right" [change-pos 90]
+      if action = "cw" [rotate true]
+      if action = "ccw" [rotate false]
+    ]
+  ] [
+    ;print "Invalid actions."
+    ;print sentence "Gridarian: " who
+    ;print cfg 
+    ;print actions
   ]
 end
 
@@ -783,6 +896,71 @@ to replenish-balls
   ]
 end
 
+to evolve-llm
+  if ticks mod ticks-per-gen = 0 and ticks > 0[
+    print word "\nGeneration: " generation
+
+    let parents select-agents
+    let kill-num length parents
+    let kill-set min-n-of kill-num gridarians [my-score]
+    let new-agent-ids []
+    
+    foreach parents [ parent ->
+      ask parent [
+        let my-parent-id who
+        let my-bodycfg cfg
+        let my-rule rule
+        hatch 1 [
+          set parent-id my-parent-id
+          set parent-rule my-rule
+          ifelse random-float 1 < body-mutation-prob [
+            set cfg mutate-body-llm my-bodycfg
+          ] [
+            set cfg my-bodycfg
+          ]
+          let pos get-init-pos cfg 0
+          let seed-patch patch (item 0 pos) (item 1 pos)
+          if [available?] of seed-patch [ move-to seed-patch ]
+          
+          init-body cfg
+          ;set rule mutate-rule
+          set rule mutate-rule my-rule cfg
+          set my-score 0
+          set new-agent-ids lput who new-agent-ids
+        ]
+      ]
+    ]
+    
+    ;; kill the lowest fitness agents
+    ask min-n-of kill-num gridarians with [not member? who new-agent-ids] [my-score] [
+      ask link-neighbors [die]
+      die 
+    ]
+    ;    ask min-one-of gridarians [my-score] [
+    ;      ask link-neighbors [die]
+    ;      die
+    ;    ]
+    ;; produce the offspring of the highest fitness agent
+    ;    let parent max-one-of gridarians [my-score]
+    ;    init-bodies 1 parent
+    
+    ask balls [die]
+    ask walls [die]
+    
+    ask gridarians [
+      set my-score 0
+      let pos get-init-pos cfg 0
+      let seed-patch patch (item 0 pos) (item 1 pos)
+      if [available?] of seed-patch [ move-to seed-patch ]
+    ]
+    
+    setup-random-walls
+    setup-random-balls
+    
+    set generation generation + 1
+  ]
+end
+
 to evolve
   if ticks mod ticks-per-gen = 0 and ticks > 0[
     if rebirth-each-gen? [
@@ -803,7 +981,7 @@ to evolve
     let parent max-one-of gridarians [my-score]
     init-bodies 1 parent
     ask gridarians [set my-score 0]
-    set generations generations + 1
+    set generation generation + 1
   ]
 end
 
@@ -983,9 +1161,9 @@ end]]></code>
       <choice type="string" value="by-cell-type"></choice>
       <choice type="string" value="by-agent"></choice>
     </chooser>
-    <slider x="15" step="1" y="15" max="100" width="160" display="init-num-agents" height="50" min="0" direction="Horizontal" default="5.0" variable="init-num-agents"></slider>
-    <slider x="15" step="1" y="72" max="100" width="160" display="max-cells-per-body" height="50" min="0" direction="Horizontal" default="20.0" variable="max-cells-per-body"></slider>
-    <monitor x="910" precision="17" y="15" height="60" fontSize="11" width="170" display="Generation">generations</monitor>
+    <slider x="15" step="1" y="15" max="100" width="160" display="init-num-agents" height="50" min="0" direction="Horizontal" default="8.0" variable="init-num-agents"></slider>
+    <slider x="15" step="1" y="72" max="100" width="160" display="max-cells-per-body" height="50" min="0" direction="Horizontal" default="30.0" variable="max-cells-per-body"></slider>
+    <monitor x="910" precision="17" y="15" height="60" fontSize="11" width="170" display="Generation">generation</monitor>
     <plot x="910" autoPlotX="true" yMax="1.0" autoPlotY="true" yAxis="Score" y="95" xMin="0.0" height="192" legend="true" xMax="10.0" yMin="0.0" width="395" xAxis="Generations" display="Avg Score per Gen">
       <setup></setup>
       <update></update>
@@ -1910,4 +2088,29 @@ end]]></code>
     </shape>
   </linkShapes>
   <previewCommands>setup-random repeat 20 [ go ]</previewCommands>
+  <experiments>
+    <experiment name="exp-no-wrap" repetitions="1" sequentialRunOrder="true" runMetricsEveryStep="false" timeLimit="202000">
+      <setup>setup</setup>
+      <go>go</go>
+      <runMetricsCondition>ticks mod ticks-per-gen = 0</runMetricsCondition>
+      <metrics>
+        <metric>mean [my-score] of gridarians</metric>
+        <metric>max [my-score] of gridarians</metric>
+      </metrics>
+      <constants>
+        <enumeratedValueSet variable="cell-visualization">
+          <value value="&quot;by-cell-type&quot;"></value>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="visualize-cell-type-symbol?">
+          <value value="false"></value>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="init-num-agents">
+          <value value="8"></value>
+        </enumeratedValueSet>
+        <enumeratedValueSet variable="max-cells-per-body">
+          <value value="30"></value>
+        </enumeratedValueSet>
+      </constants>
+    </experiment>
+  </experiments>
 </model>

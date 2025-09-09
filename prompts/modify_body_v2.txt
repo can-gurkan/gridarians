@@ -1,0 +1,60 @@
+You are an AI assistant tasked with modifying a given robot configuration for a 2D grid-based environment. The robot configuration is represented as a list of four-tuples, each describing a body part of the robot. Your goal is to optimize this configuration based on specific guidelines and constraints.
+
+First, let's establish the maximum number of parts the robot can have:
+
+<max_num_parts>
+{{MAX_NUM_PARTS}}
+</max_num_parts>
+
+Here are the body part types and their encodings:
+1. Seed or root component
+2. Propulsion component
+3. Rotator component
+4. Sensor component
+6. Interaction component
+
+Now, consider the given robot configuration:
+
+<given_robot_configuration>
+{{CFG}}
+</given_robot_configuration>
+
+Follow this process to modify the robot configuration:
+
+1. Analyze the given configuration:
+   - Identify the seed component (type 1)
+   - Count the number of each type of component
+   - Assess the overall shape and distribution of components
+
+2. Modify the configuration:
+   a. Ensure the seed component is at (0,0) with direction 0
+   b. For each additional part (up to MAX_NUM_PARTS):
+      - Consider placement: List available adjacent positions and choose one that maintains connectivity
+      - Determine type: Consider current robot needs (propulsion, sensing, interaction)
+      - Set direction:
+        * For types 2 and 4, choose a direction that points away from the body
+        * For type 3, alternate between clockwise (0) and counterclockwise (1)
+        * For type 6, no direction is needed
+
+3. Optimize the configuration:
+   - Place sensor (type 4) and interaction (type 6) components on the outer parts of the robot
+   - Ensure sensor components' directions point away from the robot's body
+   - Balance the number of movement components (types 2 and 3) for speed and maneuverability
+   - Consider the overall shape and size to avoid the robot getting stuck between obstacles
+   - Analyze the strengths of the provided configuration and build upon them
+
+4. Verify the final configuration:
+   - Check that all parts are connected
+   - Ensure no diagonal connections
+   - Confirm all coordinates are integers
+   - Validate that only one body part has type 1 (seed)
+   - Verify that other body parts' types are 2, 3, 4, or 6
+   - Check that directions are set correctly for each type
+
+Present your modified robot configuration in the following format:
+
+<robot_configuration>
+[[x1, y1, type1, direction1], [x2, y2, type2, direction2], ..., [xn, yn, typen, directionn]]
+</robot_configuration>
+
+Ensure that your configuration adheres to all the specified constraints and optimization guidelines. Do not include any comments in your output.

@@ -1,0 +1,84 @@
+You are tasked with writing a Python function called `move` that controls a robot in a 2D grid-based environment. The function should take a single argument called `input` and return a list of action strings. Follow these instructions carefully to complete the task:
+
+1. Robot Configuration:
+The robot's configuration is represented as a list of four-tuples, each describing a body part:
+
+<robot_configuration>
+{{CFG}}
+</robot_configuration>
+
+Each tuple has the format [x, y, type, direction], where:
+- x and y are coordinates relative to the seed cell (0,0)
+- type is encoded as follows:
+  1: Seed or root component
+  2: Propulsion component
+  3: Rotator component
+  4: Sensor component
+  5: Interaction component
+- direction indicates the orientation of the body part:
+  0: up
+  1: down
+  2: left
+  3: right
+
+2. Input Format:
+The `input` argument is a list containing sensor observations. This robot has {{N_SENSORS}} sensors. Each sensor's observation is a tuple, that contains (distance, object_type):
+
+Object types:
+0: empty
+1: robot's own body part
+2: Another robot's body part
+3: Wall
+4: Food item
+
+Each sensor can sense objects up to {{SENSOR_DIST}} cells.
+
+This body configuration has the following sensors:
+{{SENSOR_PROMPT}}
+
+3. Allowed Actions:
+The function should return a list of strings, containing only these possible actions:
+- "up": move up one square
+- "down": move down one square
+- "left": move left one square
+- "right": move right one square
+- "cw": rotate clockwise 90 degrees
+- "ccw": rotate counterclockwise 90 degrees
+
+Action constraints:
+- Maximum {{N_UP}} "up" actions
+- Maximum {{N_DOWN}} "down" actions
+- Maximum {{N_RIGHT}} "right" actions
+- Maximum {{N_LEFT}} "left" actions
+- Maximum {{N_CW}} "cw" actions
+- Maximum {{N_CCW}} "ccw" actions
+
+4. Function Implementation:
+The goal of the robot is to sense its surroundings and collect food items. A robot automatically collects a food item if its interaction part is next to a cell that contains a food item.
+Based on the given robot configuration, write a Python function called `move(input)` that does the following:
+
+a) Process the input observations:
+   - Interpret the sensor data
+   - Identify nearby objects, especially food items
+
+b) Determine the best actions based on:
+   - The robot's configuration
+   - Sensor observations
+   - The goal of collecting food items
+
+c) If unsure about which actions to take, incorporating randomness can help:
+   - Include a random exploration component that chooses from allowed actions
+
+d) Return a list of action strings:
+   - Ensure only allowed actions are included
+   - Respect the maximum action constraints
+   - Prioritize moving towards food items
+   - Avoid collisions with walls or other robots
+
+5. Output Format:
+The function should return a list of strings, e.g., ["up", "right", "cw"]. Ensure that:
+- Only valid action strings are used
+- The number of each action does not exceed the specified maximums
+- The actions are feasible given the robot's configuration
+
+Write your Python function inside <code> tags. Do not include any explanations or comments outside the <code> tags.

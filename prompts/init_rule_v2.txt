@@ -1,0 +1,94 @@
+You are tasked with writing a Python function called `move` that controls a robot in a 2D grid-based environment. The function should take a single argument called `input` and return a list of action strings. Please follow these instructions carefully to complete the task.
+
+First, let's review the important information about the robot and its environment:
+
+1. Robot Configuration:
+The robot's configuration is represented as a list of four-tuples, each describing a body part:
+
+<robot_configuration>
+{{CFG}}
+</robot_configuration>
+
+Each tuple has the format [x, y, type, direction], where:
+- x and y are coordinates relative to the seed cell (0,0)
+- type is encoded as follows:
+  1: Seed or root component
+  2: Propulsion component
+  3: Rotator component
+  4: Sensor component
+  5: Interaction component
+- direction indicates the orientation of the body part:
+  0: up
+  1: down
+  2: left
+  3: right
+
+2. Sensors:
+This robot has <num_sensors>{{N_SENSORS}}</num_sensors> sensors. Each sensor's observation is a tuple containing (distance, object_type).
+
+Object types:
+0: empty
+1: robot's own body part
+2: Another robot's body part
+3: Wall
+4: Food item
+
+Each sensor can sense objects up to {{SENSOR_DIST}} cells.
+
+Sensor description:
+<sensor_description>
+{{SENSOR_PROMPT}}
+</sensor_description>
+
+3. Allowed Actions and Constraints:
+The function should return a list of strings, containing only these possible actions:
+- "up": move up one square
+- "down": move down one square
+- "left": move left one square
+- "right": move right one square
+- "cw": rotate clockwise 90 degrees
+- "ccw": rotate counterclockwise 90 degrees
+
+Action constraints:
+<max_actions>
+- Maximum {{N_UP}} "up" actions
+- Maximum {{N_DOWN}} "down" actions
+- Maximum {{N_RIGHT}} "right" actions
+- Maximum {{N_LEFT}} "left" actions
+- Maximum {{N_CW}} "cw" actions
+- Maximum {{N_CCW}} "ccw" actions
+</max_actions>
+
+Now, implement the `move(input)` function that does the following:
+
+1. Process the input observations:
+   - Interpret the sensor data
+   - Identify nearby objects, especially food items
+   - Remember that input is a list of lists in the format of [[distance1, object_type1],...,[distancen, object_typen]]
+
+2. Determine the best actions based on:
+   - Sensor observations
+   - The goal of collecting food items
+
+3. If unsure about which actions to take, incorporate randomness:
+   - Include a random exploration component that chooses from allowed actions
+
+4. Return a list of action strings:
+   - Ensure only allowed actions are included
+   - Respect the maximum action constraints
+   - Prioritize moving towards food items
+   - Avoid collisions with walls or other robots
+
+Before implementing the function, wrap your strategy planning inside <strategy_planning> tags. Consider the following:
+a. How will you process and interpret the sensor data?
+b. How will you analyze the robot's configuration to inform decision-making?
+c. What strategy will you use to prioritize food collection?
+d. How will you implement random exploration when needed?
+e. How will you ensure that the action constraints are respected?
+
+After your planning, implement the Python function inside <code> tags. Ensure that your implementation is clear, concise, and follows Python best practices. Do not include any explanations or comments outside the <code> tags.
+
+Example output format:
+["up", "up", "right", "cw"]
+
+Remember to adhere to the action constraints and only use valid action strings.
