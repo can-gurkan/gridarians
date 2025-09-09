@@ -1,4 +1,4 @@
-extensions[cgp fp palette math csv py]
+extensions[cgp fp palette math]
 
 globals [
   grid-size
@@ -10,7 +10,6 @@ globals [
 
   ticks-per-gen
   mutation-rate
-  rebirth-each-gen?
 
   num-pre-updates
   threshold-pre-cell-death
@@ -36,12 +35,6 @@ globals [
   body-lvlsback
 
   generations
-
-  ;; llm
-  generation-stats
-  best-rules
-  best-rule-fitness
-  error-log
 ]
 
 breed[gridarians gridarian]
@@ -51,17 +44,6 @@ breed[balls ball]
 
 gridarians-own[
   my-score
-
-  ;; llm additions
-  ;input ;; observation vector
-  body-rule ;; current rule (llm-generated)
-  brain-rule
-  ;energy ;; current score
-  ;lifetime ;; age of the agent (in generations)
-  ;food-collected  ;; total food agent gathered
-  parent-id ;; who number of parent
-  parent-body-rule ;; parent rule
-  parent-brain-rule
 ]
 
 cells-own [
@@ -74,15 +56,14 @@ cells-own [
 
 to init-params
   __change-topology false false
-  set grid-size 30
+  set grid-size 10
   set available-cell-types [2 3 4 5 6]
-  set num-balls 10
-  set num-walls 10
+  set num-balls 0
+  set num-walls 0
   set sensing-distance 3
 
   set ticks-per-gen 1000
   set mutation-rate 0.2
-  set rebirth-each-gen? false
 
   ;; Pre-Birth Params
   set num-pre-updates 6
@@ -113,12 +94,53 @@ to init-params
   set generations 0
 end
 
+to init-params2
+  __change-topology false false
+  set grid-size 15
+  set available-cell-types [2 3 4 5 6]
+  set num-balls 5
+  set num-walls 10
+  set sensing-distance 3
+
+  set ticks-per-gen 1000
+  set mutation-rate 0.2
+
+  ;; Pre-Birth Params
+  set num-pre-updates 6
+  set threshold-pre-cell-death -0.6
+  set threshold-pre-cell-birth 0.2
+  set delta-pre-cell-health 0.2
+
+  ;; Lifetime params
+  set num-updates 1
+  set num-cell-updates 1
+  set threshold-cell-death -0.4
+  set threshold-cell-birth 0.2
+  set delta 0.1
+
+  set threshold-cell-type-inc 0.5
+  set threshold-cell-type-dec -0.5
+  set threshold-cell-dir-inc 0.5
+  set threshold-cell-dir-dec -0.5
+  set init-child-health 0
+
+  ;; Body CGP Parameters
+  set num-body-inputs 5
+  set num-body-outputs 3
+  set num-body-cols 6
+  set num-body-rows 3
+  set body-lvlsback 2
+
+  set generations 0
+end
+
+
 to setup
   clear-all
-  init-params
+  ;init-params
+  init-params2
   resize-grid grid-size
   ;init-custom-robot
-  setup-python ;; llm
   init-bodies init-num-agents 0
   setup-random-walls
   setup-random-balls
@@ -129,16 +151,6 @@ end
 to resize-grid [n]
   resize-world (-1 * n) n (-1 * n) n
   set-patch-size (11.5 * 50) / (2 * n)
-end
-
-to setup-python
-  ;; llm
-  py:setup py:python
-  py:run "import os"
-  py:run "import sys"
-  py:run "from pathlib import Path"
-  ;py:run "sys.path.append(os.path.dirname(os.path.abspath('..')))"
-  py:run "from LEAR.src.mutation.mutate_code import mutate_code"
 end
 
 to setup-box-walls
@@ -196,62 +208,6 @@ to init-custom-robot
   ]
 end
 
-to init-body-from-list [lst pos]
-  ;; llm
-  create-gridarians 1 [
-    ;let seed-patch one-of patches with [count turtles-here = 0]
-    let seed-patch patch (item 0 pos) (item 1 pos)
-    set my-score 0
-    move-to seed-patch
-    set heading 0
-    set color white
-    set shape "dot"
-    hatch-cells 1 [
-      set id [who] of myself
-      set cell-type 1
-      set direction 0
-      set health 1
-      set shape "dot"
-      create-link-from myself [tie hide-link]
-      update-cell-symbol
-    ]
-    foreach lst [ tuple ->
-      let loc patch (item 0 tuple) (item 1 tuple)
-      if [available?] of loc [
-        hatch-cells 1 [
-          move-to loc
-          set id [who] of myself
-          create-link-from myself [tie hide-link]
-          set cell-type item 2 tuple
-          let dir item 3 tuple
-          if cell-type = 2 [
-            set direction item dir [0 90 180 270]
-            set shape "arrow2"
-          ]
-          if cell-type = 3 [
-            set direction item dir [90 270]
-            ifelse direction = 90 [set shape "clock-wise"][set shape "counter-clock-wise"]
-          ]
-          if cell-type = 4 [
-            set direction item dir [0 90 180 270]
-            set shape "T"
-          ]
-          if cell-type = 5 [
-            set direction 0
-            set shape "square3"
-          ]
-          if cell-type = 6 [
-            set direction 0
-            set shape "x"
-          ]
-          set heading direction
-        ]
-      ]
-    ]
-  ]
-  visualize-cells
-end
-
 to init-bodies [num parent]
   create-gridarians num [
     let seed-patch one-of patches with [count turtles-here = 0]
@@ -307,7 +263,6 @@ to-report get-cell-vars-list
 end
 
 to-report encode-var [var lst]
-  ;; maybe change encoding to be between 0 and 1
   report -1 + (2 / (length lst - 1)) * (item 0 fp:find-indices [x -> x = var] lst)
 end
 
@@ -315,7 +270,6 @@ to-report decode-cell-updates [pre? lst]
   ;; [health type direction]
   let h sign (item 0 lst) * ifelse-value pre? [delta-pre-cell-health][delta]
   let t item 1 lst
-  ;; experiment with an encoding that can represent any cell type
   set t (ifelse-value t >= threshold-cell-type-inc [1] t <= threshold-cell-type-dec [-1][0])
   let d item 2 lst
   set d (ifelse-value d >= threshold-cell-dir-inc [1] d <= threshold-cell-dir-dec [-1][0])
@@ -345,8 +299,8 @@ to-report add-cell-vars [v i lst]
   let max-val max lst
   let min-val min lst
   (ifelse (v + i) <= max-val and (v + i) >= min-val [report v + i]
-    (v + i) > max-val [report max-val]
-    [report min-val])
+    (v + i) > max-val [report min-val]
+    [report max-val])
 end
 
 to update-cell-symbol
@@ -381,7 +335,7 @@ to cell-death [pre?]
   ]
 end
 
-to cell-birth2 [pre?]
+to cell-birth [pre?]
   let birth-threshold ifelse-value pre? [threshold-pre-cell-birth][threshold-cell-birth]
   if any? link-neighbors with [health > birth-threshold] and count link-neighbors <= max-cells-per-body [
     let num-births count link-neighbors with [health > birth-threshold]
@@ -407,42 +361,6 @@ to cell-birth2 [pre?]
   ]
 end
 
-to cell-birth [pre?]
-  let birth-threshold ifelse-value pre? [threshold-pre-cell-birth][threshold-cell-birth]
-  if any? link-neighbors with [health > birth-threshold] and count link-neighbors <= max-cells-per-body [
-    foreach sort link-neighbors with [health > birth-threshold] [ parent-cell ->
-      if parent-cell != nobody and count link-neighbors <= max-cells-per-body [
-        let possible-locs patch-set [neighbors4 with [count turtles-here = 0]] of link-neighbors
-        set possible-locs possible-locs with [available?]
-        if any? possible-locs [
-          ;let loc min-one-of possible-locs [distance parent-cell]
-          let loc one-of possible-locs
-          hatch-cells 1 [
-            move-to loc
-            set id [who] of myself
-            create-link-from myself [tie hide-link]
-            set health init-child-health
-            ifelse [cell-type] of parent-cell = 1 [
-              ;set health [health] of parent-cell
-              set cell-type one-of available-cell-types
-              set direction (ifelse-value cell-type = 2 or cell-type = 4 [one-of [0 90 180 270]]
-                cell-type = 3 [one-of [90 270]]
-                [0])
-              set heading direction
-            ] [
-              ;set health [health] of parent-cell
-              set cell-type [cell-type] of parent-cell
-              set direction [direction] of parent-cell
-              set heading [heading] of parent-cell
-            ]
-            update-cell-symbol
-          ]
-        ]
-      ]
-    ]
-  ]
-end
-
 to mutate-body [birth-prob death-prob]
   if random-float 1 < birth-prob and count link-neighbors <= max-cells-per-body [
     let possible-locs patch-set [neighbors4 with [count turtles-here = 0]] of link-neighbors
@@ -456,7 +374,8 @@ to mutate-body [birth-prob death-prob]
         move-to loc
         set id [who] of myself
         create-link-from myself [tie hide-link]
-        set cell-type one-of available-cell-types
+        ;set cell-type one-of available-cell-types
+        set cell-type one-of [2 3 4 5 6]
         if cell-type = 2 [
           set direction one-of [0 90 180 270]
           set shape "arrow2"
@@ -501,8 +420,8 @@ to-report available?
 end
 
 to visualize-cells
-  ;let color-list [blue green red yellow cyan magenta brown orange lime sky pink]
-  let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
+  let color-list [blue green red yellow cyan magenta brown orange lime sky pink]
+  ;let color-list palette:scheme-colors "Qualitative" "Set1" min list 9 (count gridarians)
   ask patches [
     set pcolor black
     if count cells-here = 1 and check-overlap [
@@ -532,7 +451,7 @@ end
 
 to go
   ask gridarians [
-    ;repeat num-updates [update-body false]
+    repeat num-updates [update-body false]
     sense
     interact
     ;move-random
@@ -635,7 +554,7 @@ to-report get-pos-dir
   let dir-list  [0 90 180 270]
   foreach range 4 [i ->
     if any? link-neighbors with [cell-type = 2 and heading = item i dir-list][
-      if random-float 1 < 0.5 [
+      if random-float 1 < 1 [
         set bool-list replace-item i bool-list 1
       ]
       ;set bool-list replace-item i bool-list 1
@@ -783,14 +702,6 @@ end
 
 to evolve
   if ticks mod ticks-per-gen = 0 and ticks > 0[
-    if rebirth-each-gen? [
-      ask gridarians [
-        ask link-neighbors with [cell-type != 1][
-          die
-        ]
-        repeat num-pre-updates [update-body true]
-      ]
-    ]
     ;; kill the lowest fitness agent
     ask min-one-of gridarians [my-score] [
       cgp:clear-brain
@@ -883,44 +794,6 @@ to-report sign [x]
   report math:signum x
 end
 
-to export-cgps
-  let export-list []
-  foreach sort gridarians [ g ->
-    ask g [
-      set export-list lput cgp:get-brain-as-list export-list
-    ]
-  ]
-  print (word "exports/exported-cgps/ex-cgp" date-and-time ".csv")
-  csv:to-file (word "exports/exported-cgps/ex-cgp-" remove ":" date-and-time ".csv") export-list
-end
-
-to import-cgps
-  let file-path "exports/exported-cgps/"
-  let file-name "ex-cgp014316.936 AM 25-Apr-2023.csv"
-  let import-list csv:from-file (word file-path file-name)
-  if-else count gridarians > length import-list [
-    print "Error: agent and cgp number mismatch."
-  ] [
-    let glist sort gridarians
-    foreach range length import-list [ i ->
-      ask item i glist [
-        let cgp-list map read-from-string item i import-list
-        cgp:brain-from-list cgp-list
-      ]
-    ]
-  ]
-end
-
-to export-world-state
-  export-world (word "exports/exported-worlds/exported-world-" remove ":" date-and-time ".csv")
-end
-
-to import-world-state
-  let file-path "exports/exported-worlds/"
-  let file-name "exported-world-013859.918 AM 25-Apr-2023.csv"
-  import-world (word file-path file-name)
-end
-
 ;;; Observables
 
 to-report cell-frequency [t]
@@ -970,15 +843,139 @@ to draw-cells
     display
   ]
 end
+
+to setup-demo
+  clear-all
+  create-gridarians 1 [
+    let seed-patch patch 0 0
+    set my-score 0
+    move-to seed-patch
+    set heading 0
+    set color white
+    set shape "dot"
+    hatch-cells 1 [
+      set id [who] of myself
+      set cell-type 1
+      set direction 0
+      set health 1
+      set shape "dot"
+      create-link-from myself [tie hide-link]
+    ]
+  ]
+  visualize-cells
+  reset-ticks
+end
+
+to grow-body-demo
+  ask gridarians [
+    mutate-body 1 0
+  ]
+  visualize-cells
+end
+
+to move-demo
+  ask gridarians [move-morph-limited]
+  visualize-cells
+end
+
+to setup-cell-type-vis
+  clear-all
+  ask patches [set pcolor white]
+;  ask patch -8 6 [
+;    set pcolor green
+;    sprout 1 [
+;      set heading 0
+;      set color white
+;      set shape "arrow2"
+;    ]
+;  ]
+;  ask patch -6 6 [
+;    set pcolor green
+;    sprout 1 [
+;      set heading 90
+;      set color white
+;      set shape "arrow2"
+;    ]
+;  ]
+  ask patch -8 8 [
+    set pcolor orange
+    sprout 1 [
+      set heading 0
+      set color white
+      set shape "dot"
+    ]
+  ]
+
+  let xcor-list [-8 -6 -4 -2]
+  let dir-list [0 90 180 270]
+  foreach range 4 [i ->
+    ask patch (item i xcor-list) 6 [
+      set pcolor green
+      sprout 1 [
+        set heading (item i dir-list)
+        set color white
+        set shape "arrow2"
+      ]
+    ]
+  ]
+
+  ask patch -8 4 [
+    set pcolor green - 2
+    sprout 1 [
+      set heading 0
+      set color white
+      set shape "clock-wise"
+    ]
+  ]
+  ask patch -6 4 [
+    set pcolor green - 2
+    sprout 1 [
+      set heading 0
+      set color white
+      set shape "counter-clock-wise"
+    ]
+  ]
+
+  foreach range 4 [i ->
+    ask patch (item i xcor-list) 2 [
+      set pcolor blue
+      sprout 1 [
+        set heading (item i dir-list)
+        set color white
+        set shape "T"
+      ]
+    ]
+  ]
+
+  ask patch -8 0 [
+    set pcolor magenta
+    sprout 1 [
+      set heading 0
+      set color white
+      set shape "square3"
+      set size 0.8
+    ]
+  ]
+
+  ask patch -8 -2 [
+    set pcolor red
+    sprout 1 [
+      set heading 0
+      set color white
+      set shape "x"
+    ]
+  ]
+  reset-ticks
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 285
 10
-877
-603
+887
+613
 -1
 -1
-9.583333333333334
+19.166666666666668
 1
 10
 1
@@ -988,10 +985,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--30
-30
--30
-30
+-15
+15
+-15
+15
 1
 1
 1
@@ -1034,9 +1031,9 @@ NIL
 
 BUTTON
 15
-300
+355
 115
-335
+390
 NIL
 draw-cells
 T
@@ -1051,9 +1048,9 @@ NIL
 
 BUTTON
 135
-300
+355
 235
-335
+390
 NIL
 test
 T
@@ -1068,24 +1065,24 @@ NIL
 
 SWITCH
 15
-200
+255
 235
-233
+288
 visualize-cell-type-symbol?
 visualize-cell-type-symbol?
-1
+0
 1
 -1000
 
 CHOOSER
 15
-240
+295
 153
-285
+340
 cell-visualization
 cell-visualization
 "by-cell-type" "by-agent"
-0
+1
 
 SLIDER
 15
@@ -1095,8 +1092,8 @@ SLIDER
 init-num-agents
 init-num-agents
 0
-100
-5.0
+30
+4.0
 1
 1
 NIL
@@ -1111,7 +1108,7 @@ max-cells-per-body
 max-cells-per-body
 0
 100
-20.0
+15.0
 1
 1
 NIL
@@ -1131,7 +1128,7 @@ generations
 PLOT
 910
 80
-1305
+1235
 230
 Avg Score per Gen
 Generations
@@ -1141,11 +1138,10 @@ Score
 0.0
 1.0
 true
-true
+false
 "" ""
 PENS
-"avg score" 1.0 0 -16777216 true "" "if ticks mod ticks-per-gen = 0 [plot mean [my-score] of gridarians]"
-"max score" 1.0 0 -2674135 true "" "if ticks mod ticks-per-gen = 0 [plot [my-score] of max-one-of gridarians [my-score]]"
+"score" 1.0 0 -16777216 true "" "if ticks mod ticks-per-gen = 0 [plot mean [my-score] of gridarians]"
 
 PLOT
 910
@@ -1153,7 +1149,7 @@ PLOT
 1305
 395
 Cell-Type Frequency
-Generations
+Time
 Frequency
 0.0
 10.0
@@ -1163,12 +1159,29 @@ true
 true
 "" ""
 PENS
-"seed-cell" 1.0 0 -955883 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 1]"
-"mover" 1.0 0 -10899396 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 2]"
-"rotator" 1.0 0 -13210332 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 3]"
-"sensor" 1.0 0 -13345367 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 4]"
-"compute" 1.0 0 -5825686 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 5]"
-"interact" 1.0 0 -2674135 true "" "if ticks mod ticks-per-gen = 0 [plot cell-frequency 6]"
+"seed-cell" 1.0 0 -955883 true "" "plot cell-frequency 1"
+"mover" 1.0 0 -10899396 true "" "plot cell-frequency 2"
+"rotator" 1.0 0 -13210332 true "" "plot cell-frequency 3"
+"sensor" 1.0 0 -13345367 true "" "plot cell-frequency 4"
+"compute" 1.0 0 -5825686 true "" "plot cell-frequency 5"
+"interact" 1.0 0 -2674135 true "" "plot cell-frequency 6"
+
+BUTTON
+15
+195
+115
+230
+update-body
+ask gridarians [update-body true]\nvisualize-cells
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 @#$#@#$#@
@@ -1585,7 +1598,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.4.0
+NetLogo 6.3.0
 @#$#@#$#@
 setup-random repeat 20 [ go ]
 @#$#@#$#@

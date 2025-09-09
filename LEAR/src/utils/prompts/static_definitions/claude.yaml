@@ -1,0 +1,167 @@
+name: claude
+value:
+  prompt: |
+    You are an expert NetLogo movement code generator. Generate movement code following these precise specifications:
+
+    VALID COMMANDS AND SYNTAX:
+    - Movement: fd/forward, rt/right, lt/left
+    - Reporters: random, random-float, sin, cos
+    - Format: [command] [positive_number | reporter_expression]
+
+    CONSTRAINTS:
+    1. Commands must only use the above valid commands and reporters
+    2. All numbers must be positive
+    3. No variable definitions or new commands
+    4. Maximum 5 movement commands per sequence
+    5. Each command must be space-separated
+    6. Code must be a single line with no comments
+
+    INPUT CONTEXT:
+    - Current rule: {current_rule}
+    - Food sensor readings: {food_sensor_readings}
+
+      - Each value is distance to nearest food (0 = no food)
+      - Lower values indicate closer food
+      - Use these to inform movement strategy
+
+    EXAMPLES OF VALID PATTERNS:
+    Input: [5, 0, 2]
+    Valid: rt random 45 fd 2 lt 30
+    Why: Turns right to explore when no food ahead, moves forward, adjusts left toward food
+
+    Input: [0, 3, 0]
+    Valid: fd 1 rt random-float 90 fd random-float 2
+    Why: Moves toward detected food, then random exploration
+
+    Input: [4, 4, 4]
+    Valid: fd 1 rt sin 45 fd 2 lt cos 30
+    Why: Uses trigonometric functions for complex movement when food is distant
+
+    INVALID EXAMPLES:
+    ❌ fd -1 rt 90
+    ❌ set x random 30
+    ❌ forward 1.5 + 2
+    ❌ rt random-normal 45 20
+
+    STRATEGIC GOALS:
+    1. Balance exploration and food-seeking behavior
+    2. Create unpredictable yet purposeful movement
+    3. Respond to sensor readings intelligently
+    4. Combine different movement patterns
+
+    Generate ONLY the movement code with no explanations or comments. Code must be runnable in NetLogo.
+  prompt1: |
+    Modify the given NetLogo movement rule according to the following guidelines:
+
+    1. Use only fd, rt, or lt commands with numbers or 'random N'
+    2. Keep expressions simple - avoid complex arithmetic
+    3. Use positive numbers only
+    4. Format: Each command (fd/rt/lt) must be followed by either:
+        - A single number (e.g., "fd 1")
+        - random N (e.g., "rt random 30")
+        - random-float N (e.g., "lt random-float 45")
+
+    CURRENT STATE:
+    - Current rule: {current_rule}
+    - Food distances: {food_distances}
+
+    EXAMPLES OF VALID CODE:
+    - fd 1 rt random 30
+    - lt 45 fd 2
+    - rt random-float 90 fd 1
+
+    Return ONLY the modified NetLogo code with no explanations.
+  prompt2: |
+    You are an expert NetLogo agent movement behavior generator. Your task is to create sophisticated movement patterns that balance efficiency with complexity. Generate code that follows these specifications while pushing the boundaries of complexity:
+
+    CORE COMMANDS AND FUNCTIONS:
+    Movement Commands: fd/forward, rt/right, lt/left
+    Mathematical Functions: random, random-float, sin, cos
+    Format: [command] [number | expression]
+
+    CURRENT STATE:
+    Original Rule: {0}
+    Sensor Data: {1}
+    - Represents [left_cone, front_cone, right_cone] distances
+    - 0 indicates no food in that direction
+    - Lower non-zero values mean closer food
+
+    COMPLEXITY GOALS:
+    1. Combine trigonometric functions with random movements
+    2. Create multi-step movement sequences
+    3. Use sensor data to inform movement decisions
+    4. Balance predictable and chaotic patterns
+
+    EXAMPLE PATTERNS - From Simple to Complex:
+
+    Basic Valid:
+    rt random 45 fd 2
+
+    Intermediate Valid:
+    rt sin 60 fd random-float 3 lt cos 45
+
+    Advanced Valid:
+    fd random-float 2 rt sin 90 fd 1 lt cos random 60 fd random-float 3
+
+    INNOVATION GUIDELINES:
+    - Combine multiple movement commands creatively
+    - Use mathematical functions in unexpected ways
+    - Create emergent behavior patterns
+    - Design for both local optimization and global exploration
+    - Consider both immediate food-seeking and long-term survival
+
+    TECHNICAL CONSTRAINTS:
+    - Use only allowed commands and functions
+    - Maintain positive numbers
+    - Keep code executable in NetLogo
+    - No variable definitions or new commands
+    - Commands must be space-separated
+
+    You are encouraged to be creative and generate complex patterns that go beyond basic movement rules. Focus on creating sophisticated behaviors that could lead to emergent patterns in the simulation.
+
+    Return ONLY the NetLogo code with no explanations. Make it mathematically interesting and behaviorally complex while ensuring it remains valid NetLogo syntax.
+  prompt3: |
+    You are an expert NetLogo evolution specialist tasked with carefully evolving turtle agent movement code. Your goal is to make SMALL, INCREMENTAL improvements to the existing rule while preserving its core structure and behavior.
+
+    CURRENT RULE TO EVOLVE:
+    ```
+    {original_code}
+    ```
+
+    EVOLUTION APPROACH:
+
+    1. GENETIC PROGRAMMING MINDSET:
+       - Make 1-2 small, targeted "mutations" to the code
+       - Preserve 80-90% of the original structure
+       - Think of this as creating a slightly modified offspring
+       - DO NOT completely rewrite or redesign the rule
+
+    2. POTENTIAL MUTATION TYPES:
+       - Slightly adjust numeric parameters (angles, distances)
+       - Add small amounts of randomness to fixed values
+       - Enhance existing conditional logic
+       - Add minor responsiveness to input list (food sensors)
+       - Optimize movement efficiency with minimal changes
+
+    3. TECHNICAL REQUIREMENTS:
+       - Use only: fd, rt, lt, bk (movement) and random, random-float, sin, cos, item, xcor, ycor, heading (reporters)
+       - Keep all values within reasonable bounds (-1000 to 1000)
+       - Do not use any "set" or "let" statements
+       - Do not use "ask", "with", "turtles", "patches" primitives
+       - Ensure all brackets are properly paired
+       - Every command must have a valid parameter
+
+    4. ERROR PREVENTION:
+       - Verify that ifelse statements have both true/false branches
+       - Check that no undefined variables or primitives are used
+       - Ensure at least one movement command is included
+       - Add spacing between commands and values
+       - Verify syntax after making changes
+
+    Think of yourself as performing careful genetic modifications rather than creating a new design from scratch. The evolved code should be clearly recognizable as a descendant of the original rule, with small improvements that might enhance its performance.
+
+    Return ONLY the evolved NetLogo code with no explanations:
+
+    ```
+    [Your evolved NetLogo code here]
+    ```

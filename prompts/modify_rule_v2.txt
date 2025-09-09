@@ -1,0 +1,90 @@
+You are an AI tasked with modifying a Python function that controls a robot in a 2D grid-based environment. Your goal is to optimize the robot's movement to collect food items while avoiding obstacles. Please carefully follow these instructions to complete the task.
+
+First, let's review the important information about the robot and its environment:
+
+1. Robot Configuration:
+The robot's body is composed of various components, represented as a list of four-tuples:
+
+<robot_configuration>
+{{CFG}}
+</robot_configuration>
+
+Each tuple follows the format [x, y, type, direction], where:
+- x and y are coordinates relative to the seed cell (0,0)
+- type is encoded as:
+  1: Seed or root component
+  2: Propulsion component
+  3: Rotator component
+  4: Sensor component
+  5: Interaction component
+- direction indicates orientation:
+  0: up
+  1: down
+  2: left
+  3: right
+
+2. Sensors:
+The robot has <num_sensors>{{N_SENSORS}}</num_sensors> sensors. Each sensor provides an observation tuple (distance, object_type).
+
+Object types:
+0: empty
+1: robot's own body part
+2: Another robot's body part
+3: Wall
+4: Food item
+
+Each sensor can sense objects up to {{SENSOR_DIST}} cells.
+
+Sensor description:
+<sensor_description>
+{{SENSOR_PROMPT}}
+</sensor_description>
+
+3. Allowed Actions and Constraints:
+The function should return a list of strings, containing only these possible actions:
+- "up": move up one square
+- "down": move down one square
+- "left": move left one square
+- "right": move right one square
+- "cw": rotate clockwise 90 degrees
+- "ccw": rotate counterclockwise 90 degrees
+
+Action constraints:
+<action_constraints>
+- Maximum {{N_UP}} "up" actions
+- Maximum {{N_DOWN}} "down" actions
+- Maximum {{N_RIGHT}} "right" actions
+- Maximum {{N_LEFT}} "left" actions
+- Maximum {{N_CW}} "cw" actions
+- Maximum {{N_CCW}} "ccw" actions
+</action_constraints>
+
+Here's the given `move(input)` function that you need to modify:
+
+<given_function>
+{{RULE}}
+</given_function>
+
+Your task is to modify this function to optimize the robot's movement. Follow these steps:
+
+1. Wrap your analysis in <analysis> tags:
+   a. Interpret sensor data: List out each sensor's reading and what it means.
+   b. Map out the environment: Create an ASCII art representation of the robot's surroundings.
+   c. Identify food locations: Note the coordinates of any detected food items.
+   d. Plan optimal path: Describe the best route to reach the nearest food item. Remember that food can only be collected if the interaction part of the body is next to it.
+   e. Consider action constraints: List each action type and how many are available.
+   f. Develop fallback exploration strategy: If no clear path to food, explain how you'll explore.
+
+2. Based on your analysis, generate a list of action strings that:
+   - Only include allowed actions
+   - Respect the maximum action constraints
+   - Prioritize moving towards food items
+   - Avoid collisions with walls or other robots
+   - Incorporate random movement when appropriate for exploration
+
+3. Provide the modified Python function inside <code> tags. Ensure your implementation is clear, concise, and follows Python best practices.
+
+Example output format:
+["up", "up", "right", "cw"]
+
+Remember to adhere to the action constraints and only use valid action strings. Your function should be adaptable to different sensor inputs.

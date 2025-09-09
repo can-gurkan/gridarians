@@ -1,0 +1,84 @@
+to-report select-agents
+  let parents []
+  ifelse selection = "tournament" [
+    set parents tournament-selection
+  ] [
+    set parents fitness-prop-selection
+  ]
+  report parents
+end
+
+to-report tournament-selection
+  let parent-list []
+  repeat num-parents [
+    let tournament n-of tournament-size gridarians
+    let contestant-list reverse sort-on [my-score] tournament
+    let winner item 0 contestant-list
+    let flag true
+    foreach contestant-list [contestant ->
+      if random-float 1 < selection-pressure and flag [
+        set winner contestant
+        set flag false
+      ]
+    ]
+    set parent-list lput winner parent-list
+  ]
+  report parent-list
+end
+
+to-report fitness-prop-selection
+  report rnd:weighted-n-of-with-repeats num-parents gridarians [my-score]
+end
+
+to-report mutate-body-llm [bodycfg]
+  py:set "mnp" max-num-cells
+  py:set "cfg" bodycfg
+  let newcfg py:runresult "modify_robot(mnp, cfg)"
+  report newcfg
+end
+
+to-report mutate-rule [old-rule bodycfg]
+  py:set "cfg" bodycfg
+  py:set "rule" old-rule
+  py:set "sensing_dist" sensing-distance
+  let new-rule py:runresult "modify_rule(rule, cfg, sensing_dist)"
+  report new-rule
+end
+
+;to-report mutate-rule
+;  let info (list rule input parent-rule fitness ticks pseudocode)
+;  let result rule
+;  let result-pseudocode pseudocode
+;  if verbose? [ print word "Current Rule: " result ]
+;
+;  py:set "agent_info" info
+;  py:set "llm_type" llm-type
+;  py:set "text_based_evolution" text-based-evolution
+;
+;  carefully [
+;    let mutation-result py:runresult "mutate_code(agent_info=agent_info, model_type=llm_type, use_text_evolution=text_based_evolution)"
+;    set result item 0 mutation-result
+;    set result-pseudocode item 1 mutation-result
+;    if verbose? [ print word "New Rule: " result ]
+;    if text-based-evolution and verbose? [ print word "New Pseudocode: " result-pseudocode ]
+;  ] [
+;    let error-info (list error-message rule ticks)
+;    set error-log lput error-info error-log
+;    if verbose? [ print word "Mutation error: " error-message ]
+;  ]
+;  set pseudocode result-pseudocode  ; Update the agent's pseudocode property
+;  report result
+;end
+;
+;to update-generation-stats
+;  set generation generation + 1
+;  let gen-fitness mean-fitness
+;  let gen-info (list ticks gen-fitness)
+;  set generation-stats lput gen-info generation-stats
+;
+;  let best-agent max-one-of llm-agents [energy]
+;  if [energy] of best-agent > best-rule-fitness [
+;    set best-rule-fitness [energy] of best-agent
+;    set best-rule [rule] of best-agent
+;  ]
+;end

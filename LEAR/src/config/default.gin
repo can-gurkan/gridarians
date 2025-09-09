@@ -1,0 +1,30 @@
+# Default parameters
+
+# Import necessary modules
+from src.generators import base
+from src.graph_providers import unified_provider
+from src.graph_providers import base as graph_base
+from src.mutation import text_based_evolution
+
+# Retry configuration
+CodeRetryHandler.max_attempts = 2
+GraphProviderBase.retry_max_attempts = 2
+GraphProviderBase.retry_prompt = None
+
+# Text evolution configuration (Strategy used by TextBasedEvolution class)
+TextBasedEvolution.evolution_strategy = 'complex'
+# GraphProviderBase.evolution_strategy removed as provider now uses state from graph
+
+# Prompt configuration - Check storeprompts.py dict (Used by provider for code generation)
+create_graph_provider.prompt_type = 'collection_resource'  # collection_simple, collection_resource, collection_poison
+create_graph_provider.prompt_name = 'zero_shot_code'  # zero_shot_code one_shot_code two_shot_code zero_shot_code_wcomments
+
+# Model-specific configurations
+GraphUnifiedProvider.temperature = 0.65
+GraphUnifiedProvider.max_tokens = 1024
+
+# Model-specific name configurations
+GraphUnifiedProvider.groq_model_name = "meta-llama/llama-4-scout-17b-16e-instruct" #"llama-3.1-8b-instant" # qwen-2.5-coder-32b llama-3.3-70b-versatile deepseek-r1-distill-qwen-32b
+GraphUnifiedProvider.claude_model_name = "claude-3-5-haiku-latest" #"claude-3-5-sonnet-20241022" #claude-3-5-haiku-latest #claude-3-haiku-20240307
+GraphUnifiedProvider.openai_model_name = "gpt-4o"
+GraphUnifiedProvider.deepseek_model_name = "deepseek-chat"

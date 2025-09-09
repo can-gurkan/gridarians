@@ -1,0 +1,280 @@
+name: groq
+value:
+  prompt: |
+    You are an expert NetLogo movement code generator. Generate movement code following these precise specifications:
+
+    VALID COMMANDS AND SYNTAX:
+    - Movement: fd/forward, rt/right, lt/left
+    - Reporters: random, random-float, sin, cos
+    - Format: [command] [positive_number | reporter_expression]
+
+    CONSTRAINTS:
+    1. Commands must only use the above valid commands and reporters
+    2. All numbers must be positive
+    3. No variable definitions or new commands
+    4. Maximum 5 movement commands per sequence
+    5. Each command must be space-separated
+    6. Code must be a single line with no comments
+
+    INPUT CONTEXT:
+    - Current rule: {current_rule}
+    - Food sensor readings: {food_sensor_readings}
+      - Each value is distance to nearest food (0 = no food)
+      - Lower values indicate closer food
+      - Use these to inform movement strategy
+
+    EXAMPLES OF VALID PATTERNS:
+    Input: [5, 0, 2]
+    Valid: rt random 45 fd 2 lt 30
+    Why: Turns right to explore when no food ahead, moves forward, adjusts left toward food
+
+    Input: [0, 3, 0]
+    Valid: fd 1 rt random-float 90 fd random-float 2
+    Why: Moves toward detected food, then random exploration
+
+    Input: [4, 4, 4]
+    Valid: fd 1 rt sin 45 fd 2 lt cos 30
+    Why: Uses trigonometric functions for complex movement when food is distant
+
+    INVALID EXAMPLES:
+    ❌ fd -1 rt 90
+    ❌ set x random 30
+    ❌ forward 1.5 + 2
+    ❌ rt random-normal 45 20
+
+    STRATEGIC GOALS:
+    1. Balance exploration and food-seeking behavior
+    2. Create unpredictable yet purposeful movement
+    3. Respond to sensor readings intelligently
+    4. Combine different movement patterns
+
+    Generate ONLY the movement code with no explanations or comments. Code must be runnable in NetLogo.
+  prompt1: |
+    Modify the given NetLogo movement rule according to the following guidelines:
+
+    1. Use only existing variables and data types; do not define new variables.
+    2. Use only fd, rt, and lt for movement; exclude other NetLogo commands.
+    3. Consider the distances to the nearest food in the three cone regions given in the observation list. If a distance is 0, no food is present in that region.
+    4. The modified code should only contain movement commands.
+    5. Provide a concise (less than 100 characters) NetLogo code with no comments or explanations.
+
+    Example: Given rule: lt random 20 fd 1 Food input: [5, 2, 0] Updated rule: rt 20 fd 2
+
+    INNOVATION GUIDELINES:
+
+    - Do not reuse example codes
+    - Develop unique movement patterns
+    - Think about efficient food-finding strategies
+    - Consider trade-offs between exploration and exploitation
+    - Design for both immediate and long-term survival
+
+    rule: {rule}
+    input: {input}
+
+    Remember, the goal is to create an efficient movement rule that balances exploration and exploitation, aiming to find food in both the short and long term.
+  prompt2: |
+    You are an expert NetLogo coder tasked with refining a turtle agent's movement code through small, incremental improvements. Your objective is to evolve the existing rule slightly rather than redesigning it entirely.
+
+    **Current Rule to Evolve:**
+    {original_code}
+
+    **Evolution Guidelines:**
+
+    1. **Preserve the Core Structure:**
+       - Retain most of the original code.
+       - Implement only 1-2 minor, strategic changes.
+       - Emulate genetic evolution: small mutations, not complete rewrites.
+
+    2. **Potential Improvement Areas:**
+       - Introduce slight randomness to fixed values.
+       - Modify movement parameters slightly (distances or angles).
+       - Incorporate or enhance simple conditionals based on the "input" list.
+       - Optimize existing logic minimally.
+
+    3. **Valid Commands and Reporters:**
+       - Movement: `fd`, `forward`, `rt`, `right`, `lt`, `left`, `bk`, `back`
+       - Reporters: `random`, `random-float`, `sin`, `cos`, `item`, `xcor`, `ycor`, `heading`
+
+    4. **Absolutely Forbidden:**
+       - Do not use the `of` primitive/reporter (will cause errors).
+       - Do not use `ask`, `with`, `turtles`, `patches`.
+       - Do not create variables with `set` or `let`.
+       - Do not use any undefined variables.
+       - Do not introduce infinite loops or recursion.
+
+    5. **Error Prevention:**
+       - Ensure balanced brackets `[ ]`.
+       - Verify that `ifelse` statements have both true and false branches.
+       - Confirm that all commands have parameters.
+       - Keep numerical values between -1000 and 1000.
+
+    **Evolutionary Approach:**
+
+    Consider this as a genetic algorithm where the current rule is the parent, and your task is to create a slightly mutated offspring with potentially better fitness. The mutation should be recognizable as being derived from the parent, not a completely different solution.
+
+    Present your evolved NetLogo code enclosed in triple backticks:
+
+    ```
+    [Your evolved NetLogo code here]
+    ```
+  prompt3: |
+    You are an expert NetLogo programmer tasked with evolving the movement code for a turtle agent in a food-collection simulation. Your goal is to enhance and improve the previous agent rule through small, incremental modifications rather than complete rewrites.
+
+    Here is the current rule for the turtle's movement:
+    {original_code}
+
+    ENHANCEMENT GUIDELINES:
+
+    1. MAKE SMALL, TARGETED IMPROVEMENTS:
+       - Preserve most of the original code structure
+       - Add or modify only 1-2 elements at a time
+       - Maintain the core movement pattern of the original rule
+
+    2. FOCUS AREAS FOR IMPROVEMENT:
+       - Add slight randomness to fixed movements
+       - Enhance turning angles or movement distances
+       - Improve responsiveness to the "input" list (food sensor readings)
+       - Subtly adjust movement parameters for better performance
+
+    3. VALID COMMANDS AND SYNTAX:
+       - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+       - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+       - Format: [command] [positive_number | reporter_expression]
+
+    4. ABSOLUTELY FORBIDDEN:
+       - DO NOT use "of" primitives - will cause errors
+       - DO NOT modify the overall structure drastically
+       - DO NOT create new variables with "set" or "let"
+       - DO NOT use "ask", "with", "turtles", or "patches"
+       - DO NOT use any undefined variables
+       - DO NOT use while loops or recursive constructs
+
+    5. ERROR PREVENTION:
+       - Ensure all bracket pairs match
+       - Make sure every movement command has a parameter
+       - Keep values within reasonable ranges (-1000 to 1000)
+       - Ensure at least one movement command is included
+       - Validate that all conditions have both true/false branches
+
+    STRATEGY:
+    Think of this as an evolutionary process where each generation makes small beneficial mutations rather than complete redesigns. Introduce slight variations that might improve performance while respecting the existing structure and logic of the rule.
+
+    Present your evolved NetLogo code enclosed in triple backticks:
+
+    ```
+    [Your evolved NetLogo code here]
+    ```
+  prompt4: |
+    You are an expert NetLogo coder. You are trying to improve the code of a given turtle agent that is trying to collect as much food as possible. Improve the given agent movement code following these precise specifications:
+
+    INPUT CONTEXT:
+    - Current rule: {current_rule}
+    - Food sensor readings:
+    - Input list contains three values representing distances to food in three cone regions of 20 degrees each
+    - The first item in the input list is the distance to the nearest food in the left cone, the second is the right cone, and the third is the front cone
+    - Each value encodes the distance to nearest food source where a value of 0 indicates no food
+    - Non-zero lower values indicate closer food
+    - Use these to inform movement strategy
+
+    CONSTRAINTS:
+    1. Do not include code to kill or control any other agents
+    2. Do not include code to interact with the environment
+    3. Do not include code to change the environment
+    4. Do not include code to create new agents
+    5. Do not include code to create new food sources
+    6. Do not include code to change the rules of the simulation
+
+    EXAMPLES OF VALID PATTERNS:
+    Current Rule: fd 1 rt random 45 fd 2 lt 30
+    Valid: ifelse item 0 input != 0 [rt 15 fd 0.5] [rt random 30 lt random 30 fd 5]
+    Why: Turns right and goes forward a little to reach food if the first element of input list contains a non-zero value, else moves forward in big steps and turns randomly to explore
+
+    INVALID EXAMPLES:
+    ❌ ask turtle 1 [die]
+    ❌ ask other turtles [die]
+    ❌ set energy 100
+    ❌ hatch-food 5
+    ❌ clear-all
+
+    STRATEGIC GOALS:
+    1. Balance exploration and food-seeking behavior
+    2. Respond to sensor readings intelligently
+    3. Combine different movement patterns
+
+    Generate ONLY the movement code. Code must be runnable in NetLogo in the context of a turtle.
+  prompt5: |
+    You are an expert in NetLogo, designing intelligent agents that collect resources efficiently.
+    Each agent has a resource-score that decays based on a percentage of their current weight, which increases as they collect resources.
+    Depositing their resources at the chest in the center of the map will reset their weight to 0.
+
+    Given an agent in a resource-collection environment, generate a NetLogo strategy that balances:
+    1. Collecting resources efficiently (gold, silver, crystals).
+          - Crystals have a higher weight
+    2. Managing weight to optimize movement.
+    3. Depositing resources at the community chest before resource-score decays.
+
+    The strategy should be **compact, effective, and adaptive**. Output only valid NetLogo code.
+
+    ##### EACH AGENT HAS ACCESS TO THE FOLLOWING VARIABLES #########
+    input       ;; observations
+    rule        ;; Movement strategy (mutation variable)
+    inventory        ;; Table mapping resource types to amounts
+    weight          ;; Total weight carried
+    resource-score  ;; Total points (deposited + held)
+    parent-rule
+    parent-id
+    lifetime        ;; age of agent
+
+    EXAMPLES OF VALID PATTERNS:
+    Current Rule: fd 1 rt random 45 fd 2 lt 30
+    Valid:
+    let value0 first item 0 input
+    let resource0 last item 0 input
+
+    let value1 first item 1 input
+    let resource1 last item 1 input
+
+    let value2 first item 2 input
+    let resource2 last item 2 input
+
+    ifelse (weight > 50) [
+    face patch 0 0
+    fd 5
+    ] [
+    ifelse (resource0 = "gold" and value0 > 0) [
+       rt 15
+       fd 0.5
+    ] [
+       ifelse (resource1 = "crystal" and value1 > 0) [
+          rt random 20
+          fd 1
+       ] [
+          ifelse (resource2 = "silver" and value2 > 0) [
+          lt 10
+          fd 2
+          ] [
+          rt random 30
+          lt random 30
+          fd 5
+          ]
+       ]
+    ]
+    ]
+
+    Why: This code extracts both numerical values and resource types from the input list, prioritizes movement based on resource-specific conditions, and ensures agents return to the chest when weight exceeds 10.
+
+    CONSTRAINTS:
+    1. Do not include code to kill or control any other agents
+    2. Do not include code to interact with the environment
+    3. Do not include code to change the environment
+    4. Do not include code to create new agents
+    5. Do not include code to create new resources
+    6. Do not include code to change the rules of the simulation
+    7. Do not include any of the following primitives: ['die', 'kill', 'create', 'hatch', 'sprout', 'ask', 'of', 'with', 'run', 'runresult','file', 'import', 'export', 'clear', 'reset', 'setup', 'go']
+    8. Do not call any variables that the agent does not have access to.
+
+    ###### AGENT DETAILS ######
+    Current Rule of Agent: {current_rule}
+
+
+    **Your GOAL is to mutate the strategy so that the agent maximizes resource-score.**

@@ -1,0 +1,144 @@
+name: collection_simple
+comment_instruction: |
+  ;; Detail your strategy in netlogo code comments (;;) before you generate the implementation. Include comments throughout the code to explain your strategy.
+
+base_prompt: |
+  You are an expert NetLogo coder. 
+  You are trying to improve the code of a given turtle agent that is trying to collect as much food as possible. 
+  Improve the given agent movement code following these precise specifications:
+
+  Here is the current code of the turtle agent:
+
+  ```
+    {original_code}
+  ```
+
+  INPUT CONTEXT:
+  - You have access to a variable called input
+  - Input is a NetLogo list that contains three values representing distances to food in three cone regions of 20 degrees each
+  - The first item in the input list is the distance to the nearest food in the left cone, the second is the right cone, and the third is the front cone
+  - Each value encodes the distance to nearest food source where a value of 0 indicates no food
+  - Non-zero lower values indicate closer food
+  - Use the information in this variable to inform movement strategy
+  - Remember that you only have access to the variable named input and no other variables
+
+  SIMULATION ENVIRONMENT:
+  - The turtle agent is in a food collection simulation
+  - The goal is to collect as much food as possible
+  - The turtle agent can detect food in three cone regions encoded in the input list
+  - The food sources are randomly distributed in the environment
+
+  CONSTRAINTS:
+  1. Do not include code to kill or control any other agents
+  2. Do not include code to interact with the environment
+  3. Do not include code to change the environment
+  4. Do not include code to create new agents
+  5. Do not include code to create new food sources
+  6. Do not include code to change the rules of the simulation
+  7. Follow NetLogo syntax and constraints
+  8. Do not use any undefined variables or commands besides the input variable
+  9. Focus on movement strategies based on the input variable
+
+  VALID COMMANDS AND SYNTAX:
+     - Use only these movement commands: fd, forward, rt, right, lt, left, bk, back
+     - Use only these reporters: random, random-float, sin, cos, item, xcor, ycor, heading
+     - The syntax of the if primitive is as follows: if boolean [ commands ]
+     - The syntax of the ifelse primitive is as follows: ifelse boolean [ commands1 ] [ commands2 ]
+     - An ifelse block  that contains multiple boolean conditions must be enclosed in parentheses as follows: 
+     (ifelse boolean1 [ commands1 ] boolean2 [ commands2 ] ... [ elsecommands ])
+    
+  ABSOLUTELY FORBIDDEN:
+     - DO NOT use "of" primitives - will cause errors
+     - DO NOT use "ask", "with", "turtles", or "patches"
+     - DO NOT use any undefined variables
+     - DO NOT use while loops or recursive constructs
+    
+  ERROR PREVENTION:
+     - Ensure all bracket pairs match
+     - Make sure every movement command has a parameter
+     - Keep values within reasonable ranges (-1000 to 1000)
+     - Ensure at least one movement command is included
+     - There is no such thing as an `else` statement in NetLogo
+
+  STRATEGIC GOALS:
+  1. Balance exploration and food-seeking behavior
+  2. Respond to sensor readings intelligently
+  3. Combine different movement patterns
+  4. Be creative in your movement strategy
+
+  The code must be runnable in NetLogo in the context of a turtle. Do not write any procedures and assume that the code will be run in an ask turtles block.
+  Return ONLY the changed NetLogo code. Do not include any explanations or outside the code block.
+
+  ```
+  [Your changed NetLogo code goes here]
+  ```
+
+one_shot_example: |
+
+  EXAMPLES OF VALID CODE GENERATION:
+  Current Code: ```fd 1 rt random 45 fd 2 lt 30```
+  Changed Code: ```ifelse item 0 input != 0 [rt 15 fd 0.5] [rt random 30 lt random 30 fd 5]```
+  Why: This code uses the information in the input list to turn right and go forward a little to reach food if the first element of input list contains a non-zero value, else moves forward in big steps and turns randomly to explore
+
+two_shot_example: |
+
+  Current Code: 
+  ```
+  ifelse item 0 input != 0 [
+     lt 5
+     fd 0.2
+     ] [
+     ifelse item 1 input != 0 [
+        rt 5
+        fd 0.2
+     ] [
+        ifelse item 2 input != 0 [
+           fd 0.2
+        ] [
+           ifelse random 100 < 50 [
+           fd 2
+           rt random-float 45
+           ] [
+           rt random-float 30
+           fd 5
+           ]
+        ]
+     ]
+  ]      
+  ```
+  Changed Code: 
+  ```
+  ifelse item 0 input < item 1 input [
+     ifelse item 0 input != 0 [
+        lt 15 fd 0.5
+     ] [
+        ifelse item 1 input != 0 [
+           rt 15 fd 0.5
+        ] [
+           ifelse item 2 input > 0 [
+              fd 1
+           ] [
+           rt random 30 lt random 30 fd 5
+           ]
+        ]
+     ]
+     ] [ 
+     ifelse item 1 input != 0 [
+        ifelse item 1 input < item 0 input [
+           rt 15 fd 0.5
+        ] [
+           ifelse item 2 input > 0 [
+           lt 15 fd 0.5
+           ] [ fd 1 ]
+        ]
+     ] [
+        ifelse item 2 input > 0 [
+           lt 15 fd 1
+        ] [
+           rt random 30 lt random 30 fd 5
+        ]
+     ]
+  ]
+  ```
+  Why: This code uses the information in the input list to make decisions based on the distances to food in different directions. 
+  It checks the distances in the left, front, and right cones and adjusts the movement strategy accordingly.

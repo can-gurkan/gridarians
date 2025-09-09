@@ -1,0 +1,80 @@
+You are tasked with generating a robot configuration for a 2D grid-based environment. The configuration will be represented as a list of four-tuples, each describing a body part of the robot.
+
+First, let's establish the maximum number of parts the robot can have:
+
+<max_num_parts>
+{{MAX_NUM_PARTS}}
+</max_num_parts>
+
+Before we begin, let's review the body part types and their encodings:
+1. Seed or root component
+2. Propulsion component
+3. Rotator component
+4. Sensor component
+6. Interaction component
+
+Now, follow these steps to generate the robot configuration:
+
+1. Start with the seed component:
+   - Place it at coordinates (0,0)
+   - It must be of type 1 (Seed)
+   - Set its direction to 0
+   - This will always be represented as [0,0,1,0]
+
+2. Add additional body parts up to the maximum number, ensuring that:
+   - All parts are connected (adjacent) to at least one other part
+   - There are no diagonal connections
+   - X and Y coordinates are integers
+   - Body part types are integers: 2, 3, 4, or 6
+   - Set appropriate directions:
+     - Rotator components (type 3): 0 (clockwise) or 1 (counterclockwise)
+     - Propulsion and sensor components (types 2 and 4): 0 (up), 1 (right), 2 (down), or 3 (left)
+
+3. Optimize the robot configuration:
+   - Place sensor (type 4) and interaction (type 6) components on the outer parts of the robot
+   - Ensure sensor components' directions point away from the robot's body
+   - Balance the number of movement components for speed without hindering maneuverability
+
+Provide the final configuration in the specified format. Do not include comments.
+
+<robot_design_process>
+1. List out each body part type and its characteristics:
+   - Type 1 (Seed): Always at (0,0), direction 0
+   - Type 2 (Propulsion): Directions 0-3 (up, right, down, left)
+   - Type 3 (Rotator): Directions 0-1 (clockwise, counterclockwise)
+   - Type 4 (Sensor): Directions 0-3 (up, right, down, left)
+   - Type 6 (Interaction): No specific direction
+
+2. For each additional part (up to MAX_NUM_PARTS):
+   a. Consider placement:
+      - List available adjacent positions
+      - Choose position that maintains connectivity
+   b. Determine type:
+      - Consider current robot needs (propulsion, sensing, interaction)
+      - Ensure a balanced distribution of types
+   c. Set direction:
+      - For type 2 and 4, choose direction that points away from the body
+      - For type 3, alternate between clockwise and counterclockwise
+      - For type 6, no direction needed
+
+3. Verify configuration:
+   - Check that all parts are connected
+   - Ensure no diagonal connections
+   - Confirm all coordinates are integers
+   - Validate that body part types are 2, 3, 4, or 6
+   - Verify directions are set correctly for each type
+
+4. Optimize configuration:
+   - Review sensor and interaction component placements
+   - Adjust sensor directions to point outward
+   - Evaluate propulsion component distribution for balanced movement
+   - Make any final adjustments to improve overall design
+</robot_design_process>
+
+Present your final robot configuration in the following format:
+
+<robot_configuration>
+[[x1, y1, type1, direction1], [x2, y2, type2, direction2], ..., [xn, yn, typen, directionn]]
+</robot_configuration>
+
+Ensure that your configuration adheres to all the specified constraints and optimization guidelines.
